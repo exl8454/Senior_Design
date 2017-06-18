@@ -46,4 +46,4 @@ __UPDATE README.md file IF YOU MADE ANY PROGRESS/CHANGE!__
 ---
 ### Ease of Access
 * [Detailed Progress Update](https://github.com/exl8454/Senior_Design/blob/master/Progress%20Log/README.md)
-* [Plans and Dates]() -> Add hyperlink please Eduardo
+* [Plans and Dates](https://github.com/exl8454/Senior_Design/blob/master/Dates%20and%20Plans/README.md) 
