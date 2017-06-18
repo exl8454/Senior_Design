@@ -18,6 +18,8 @@ __Don't add files in here! Only use README.md to update your Progress!__
   * Charlie
     * June 17 2017
 > +Forked Repository
+> +Constructed basic folder system for plans and dates  
+> (Perhaps add more folders for other items?)
 
 ---
 ### For your reference...
