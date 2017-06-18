@@ -42,3 +42,8 @@ __UPDATE README.md file IF YOU MADE ANY PROGRESS/CHANGE!__
 * If referencing research document(s), __DO ADD REFERENCE__
 * __Always create your own branch first before changing any part of repository!__
 * When making branch, name it as _branch-(your name)_
+* __Don't use other person's branch! If you do, you will mess their branch!__
+---
+### Ease of Access
+* [Detailed Progress Update](https://github.com/exl8454/Senior_Design/blob/master/Progress%20Log/README.md)
+* [Plans and Dates]() -> Add hyperlink please Eduardo
