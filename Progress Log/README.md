@@ -17,9 +17,13 @@ __Don't add files in here! Only use README.md to update your Progress!__
 * Outside Contributor(s)
   * Charlie
     * June 17 2017
-> +Forked Repository
-> +Constructed basic folder system for plans and dates  
-> (Perhaps add more folders for other items?)
+      > +Forked Repository  
+      > +Constructed basic folder system for plans and dates  
+      > (Perhaps add more folders for other items?)
+
+	* June 18 2017
+	  > +Added new folder for IMU Arduino code  
+	  > +Added useful links folder to save all references and useful links.
 
 ---
 ### For your reference...
