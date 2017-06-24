@@ -16,7 +16,11 @@ June 23rd, 2017 (Friday)
 > Add some plan
 
 June 24th, 2017 (Saturday)
-> Add some plan
+> Meet at UTA and begin work on IMU (JT, MT)
+> Meet at UTA and begin work on LIDAR cpp code. (EL)
 
 June 25th, 2017 (Sunday)
-> Add some plan
+> Continue work independently
+
+June 26th, 2017 (Monday)
+>Set up new meet time with Dr. Sevil (EL)
