@@ -4,8 +4,4 @@
 	Last Edited: 2017 June 24th
 	
 	Does not work yet
-	
-	Added more lines, still under comments
-	
-	Sensor uses LSM303 and HMC Magentometer
  */
