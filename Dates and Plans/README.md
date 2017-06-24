@@ -24,3 +24,5 @@ June 25th, 2017 (Sunday)
 
 June 26th, 2017 (Monday)
 >Set up new meet time with Dr. Sevil (EL)
+
+June 27th, 2017 (Tuesday)
