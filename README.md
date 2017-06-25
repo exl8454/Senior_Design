@@ -28,6 +28,9 @@ __UPDATE README.md file IF YOU MADE ANY PROGRESS/CHANGE!__
 * June 17th, 2017  
 > +Added README.md file  
 > +Organized folder (Will add README.md file into folders later)
+
+* June 18th, 2017
+> More folders added (Refer to Progress Log Folder)
 ---
 ### When using this repository... 
 * Make sure to add +, -, or * for progress log!  
