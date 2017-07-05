@@ -1,7 +1,7 @@
 #include <CS_IMU.h>
 
 long timestamp = -1;
-float gx, gy, gz;
+float data[][3] = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 
 int interval = 10;
 
@@ -17,16 +17,8 @@ void setup()
 
 void loop()
 {
-  /* Currently prints out
-   *  [timestamp]ms X: [gyroX] Y: [gyroY] Z: [gyroZ]
-  */
   long timeStart = millis();
-  readSensor(&timestamp, &gx, &gy, &gz);
-  Serial.println("Gyro Reading");
-  Serial.print(timestamp); Serial.print("ms X: ");
-  Serial.print(gx); Serial.print(" Y: ");
-  Serial.print(gy); Serial.print(" Z: ");
-  Serial.println(gz);
+  readSensor(&timestamp, data);
   long timeEnd = millis();
 
   /* Checks for 30ms interval. If interval exceeds 30ms, skip delay.
