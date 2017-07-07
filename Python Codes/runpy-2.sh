@@ -1,5 +1,4 @@
 #!/bin/bash
 cd ~/sd
-source devel/setup.bash
-rosrun rplidar_ros rplidarNodeClient
-
+echo 'Red!23' | sudo -S source devel/setup.bash
+echo 'Red!23' | sudo -S rosrun rplidar_ros rplidarNodeClient
