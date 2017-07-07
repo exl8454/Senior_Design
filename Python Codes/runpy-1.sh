@@ -1,5 +1,5 @@
 #!/bin/bash
 cd ~/sd
-echo 'Red!23' | sudo -S chmod 666 /dev/ttyUSB0
-echo 'Red!23' | sudo -S source devel/setup.bash
-echo 'Red!23' | sudo -S roslaunch rplidar_ros rplidar.launch
+echo -e "Red!23\n" | sudo -S chmod 666 /dev/ttyUSB*
+source devel/setup.bash
+roslaunch rplidar_ros rplidar.launch
