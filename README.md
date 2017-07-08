@@ -31,6 +31,9 @@ __UPDATE README.md file IF YOU MADE ANY PROGRESS/CHANGE!__
 
 * June 18th, 2017
 > More folders added (Refer to Progress Log Folder)
+
+* July 5th, 2010
+> Python integration for LIDAR
 ---
 ### When using this repository... 
 * Make sure to add +, -, or * for progress log!  
