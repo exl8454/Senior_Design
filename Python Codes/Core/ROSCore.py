@@ -15,12 +15,14 @@ class InitProcess(threading.Thread):
 
         try:
             initProcess = subprocess.Popen('./runpy-1.sh', stdout = subprocess.PIPE)
+            running = True;
         except OSError as oe:
             StreamHandler.WriteErr("From ROSCore.py; InitProcess() ")
             StreamHandler.WriteErr("\t" + str(oe.strerror))
-            StreamHandler.PrintTo("Closing Files...")
-            StreamHandler.WriteLog("Closing Files...")
+            StreamHandler.PrintTo("Terminating process...")
+            StreamHandler.WriteLog("Terminating process...")
             StreamHandler.CloseAll()
+            running = False;
 
         if not(initProcess is None):    
             for line in initProcess.stdout:
@@ -31,22 +33,25 @@ class ScanProcess(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        global scanProcess
-        while True:
+        global scanProcess, running
+        while running:
             GetData()
 
 def StartCore():
     global initProcess, scanProcess
     global initProc, scanProc
+    global running
     
     try:
         scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
+        running = True;
     except OSError as oe:
         StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
         StreamHandler.WriteErr("\t" + str(oe.strerror))
-        StreamHandler.PrintTo("Closing Files...")
-        StreamHandler.WriteLog("Closing Files...")
+        StreamHandler.PrintTo("Terminating process...")
+        StreamHandler.WriteLog("Terminating process...")
         StreamHandler.CloseAll()
+        running = False;
         
     initProc.start()
     initProc.join()
@@ -64,3 +69,5 @@ scanProcess = None
 
 initProc = InitProcess()
 scanProc = ScanProcess()
+
+running = False
