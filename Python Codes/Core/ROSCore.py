@@ -12,9 +12,19 @@ class InitProcess(threading.Thread):
 
     def run(self):
         global initProcess
-        initProcess = subprocess.Popen('./runpy-1.sh', stdout = subprocess.PIPE)
-        for line in initProcess.stdout:
-            StreamHandler.WriteLog(line)
+
+        try:
+            initProcess = subprocess.Popen('./runpy-1.sh', stdout = subprocess.PIPE)
+        except OSError as oe:
+            StreamHandler.WriteErr("From ROSCore.py; InitProcess() ")
+            StreamHandler.WriteErr("\t" + str(oe.strerror))
+            StreamHandler.PrintTo("Closing Files...")
+            StreamHandler.WriteLog("Closing Files...")
+            StreamHandler.CloseAll()
+
+        if not(initProcess is None):    
+            for line in initProcess.stdout:
+                StreamHandler.WriteLog(line)
 
 class ScanProcess(threading.Thread):
     def __init__(self):
@@ -28,18 +38,29 @@ class ScanProcess(threading.Thread):
 def StartCore():
     global initProcess, scanProcess
     global initProc, scanProc
-    scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
+    
+    try:
+        scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
+    except OSError as oe:
+        StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
+        StreamHandler.WriteErr("\t" + str(oe.strerror))
+        StreamHandler.PrintTo("Closing Files...")
+        StreamHandler.WriteLog("Closing Files...")
+        StreamHandler.CloseAll()
+        
     initProc.start()
     initProc.join()
     scanProc.start()
     scanProc.join()
 
 def GetData(channel = 0, decimalPlaces = 6):
-    outputline = scanProcess.stdout.readline()
-    LidarParser.ParseData(outputline)
+    global scanProcess
+    if not(scanProcess is None):
+        outputline = scanProcess.stdout.readline()
+        LidarParser.ParseData(outputline)
     
 initProcess = None
 scanProcess = None
 
-iniProc = InitProcess()
+initProc = InitProcess()
 scanProc = ScanProcess()

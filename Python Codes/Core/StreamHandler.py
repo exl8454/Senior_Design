@@ -6,6 +6,17 @@ import os.path
 import time
 from datetime import datetime
 
+# Force closes all files
+def CloseAll():
+    files[0].close()
+    files[1].close()
+
+def CloseDump():
+    files[0].close()
+
+def CloseData():
+    files[1].close()
+
 # Initializes files
 # Provide Directory to save data and dump
 def InitFiles(directory):
@@ -35,7 +46,7 @@ def InitFiles(directory):
 # as default.
 # If title parameter is not set, it will also send default expression.
 # Anything in line will forced converted to string type.
-def WriteTo(line, fileType = 0, title = " DUMP=", append = False, timestamp = True):
+def WriteTo(line, fileType = 0, title = "[  DMP  ]: ", append = False, timestamp = True):
     global fileLoc, files
     # Open file if it is closed
     if files[fileType].closed:
@@ -43,7 +54,8 @@ def WriteTo(line, fileType = 0, title = " DUMP=", append = False, timestamp = Tr
     # End
     # Write to file
     if timestamp: # If timestamp is true, timestamp will be added
-        files[fileType].write(str(datetime.now()) + "\n")
+        files[fileType].write("[ " + str(datetime.now()) + " ]")
+        
     # Otherwise will print title and data
     files[fileType].write(title + str(line))
     
@@ -52,16 +64,19 @@ def WriteTo(line, fileType = 0, title = " DUMP=", append = False, timestamp = Tr
     files[fileType].close()
 
 def WriteLog(line, append = False):
-    WriteTo(line, 0, " Log: ", append, timestamp = True)
+    WriteTo(line, 0, "[  Log  ]: ", append, timestamp = True)
 
 def WriteErr(line, append = False):
-    WriteTo(line, 0, " Error: ", append, timestamp = True)
+    WriteTo(line, 0, "[  Err  ]: ", append, timestamp = True)
 
 def WriteData(line, append = False):
-    WriteTo(line, 0, " Data: ", append, timestamp = True)
+    WriteTo(line, 0, "[  Dat  ]: ", append, timestamp = True)
 
 def Write(line, append = False):
     WriteTo(line, 1, "", append, timestamp = False)
+
+def PrintTo(line, title = "[  DUMP  ]: "):
+    print ("[ " + str(datetime.now()) + " ]" + title + str(line))
 
 fileCount = 0
 dumpLoc = ""

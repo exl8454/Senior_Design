@@ -5,6 +5,7 @@ import StreamHandler
 import ROSCore
 
 # Write
+StreamHandler.PrintTo("Test")
 StreamHandler.InitFiles("LIDARDUMP")
 
 ROSCore.StartCore()
