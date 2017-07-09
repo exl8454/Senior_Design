@@ -1,12 +1,17 @@
 # ROSCore.py
 # Core for ROS Node init and scan
 
+# Native imports
+import os
+import signal
 import subprocess
 import threading
 import StreamHandler
-import LidarParser as parser
 from time import sleep
 import time
+
+# Custom imports
+import LidarParser as parser
 
 class ScanProcess(threading.Thread):
     def __init__(self):
@@ -42,6 +47,17 @@ def StartCore():
     StreamHandler.PrintTo("Creating Node...")
     scanProc.start()
     scanProc.join()
+
+def TerminateCore():
+	global scanProcess
+
+	StreamHandler.PrintTo("Terminating ROS Service...")
+	if not(scanProcess is None):
+            os.kill(scanProcess.pid, signal.SIGINT)
+            #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
+            running = False
+
+
 
 def GetData(channel = 0, decimalPlaces = 6):
     global scanProcess
