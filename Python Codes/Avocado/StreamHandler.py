@@ -78,6 +78,45 @@ def Write(line, append = False):
 def PrintTo(line, title = "DUMP"):
     print ("[ " + str(datetime.now()) + " ]" + "[  " + title + "  ]: " + str(line))
 
+def OpenFile(loc):
+    global openFile
+    if not(openFile is None) and not(openFile.closed):
+        openFile.close()
+
+    try:
+        openFile = open(loc, "r")
+        return 0
+    except IOError as ioe:
+        PrintTo(str(ioe), "ERR")
+        return -1
+
+def ReadConfig():
+    global openFile
+    status = OpenFile("config.avocado")
+    if status != 0:
+        PrintTo("Avocado didn't detect its configuration file!", "ERR")
+        PrintTo("Auto-generating default configuration...", "INFO")
+        openFile = open("config.avocado", "w")
+        openFile.write("avocado_dump_data=False\n")
+        openFile.write("avocado_read_interval=10\n")
+        openFile.write("avocado_lidar_scan_type=0\n")
+        openFile.write("avocado_servo_interval=15\n")
+        openFile.close()
+        return -1
+    else:
+        PrintTo("Config file loaded, changing settings...", "INFO")
+        line = openFile.read()
+        line = line.split("\n")
+        avocado_dump_data = line[0].split("=")[1] in ['True', 'False']
+        avocado_read_interval = int(line[1].split("=")[1])
+        avocado_lidar_scan_type = int(line[2].split("=")[1])
+        avocado_servo_interval = int(line[3].split("=")[1])
+        return [avocado_dump_data,
+                avocado_read_interval,
+                avocado_lidar_scan_type,
+                avocado_servo_interval]
+        openFile.close()
+
 fileCount = 0
 dumpLoc = ""
 dataLoc = ""
@@ -85,5 +124,7 @@ dataLoc = ""
 fileLoc = ["", ""]
 dumpFile = None
 dataFile = None
+
+openFile = None
 
 files = [None, None]
