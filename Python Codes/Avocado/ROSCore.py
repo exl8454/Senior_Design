@@ -49,11 +49,13 @@ def StartCore():
     scanProc.join()
 
 def TerminateCore():
-	global scanProc
+	global scanProcess
 
 	StreamHandler.PrintTo("Terminating ROS Service...")
-	os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
-	running = false
+	if not(scanProcess is None):
+            os.kill(scanProcess.pid, signal.SIGINT)
+            #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
+            running = False
 
 
 

@@ -23,7 +23,7 @@ if(avocado_config == -1):
 
 stream.PrintTo("Setting local data dump position", "INFO")
 stream.PrintTo("Avocado will automatically create directory if it doesn't exist...", "INFO")
-if not os.path.exist(avocado_filedir):
+if not os.path.exists(avocado_filedir):
 	os.makedirs(avocado_filedir)
 
 stream.InitFiles(avocado_filedir)
