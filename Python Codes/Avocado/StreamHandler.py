@@ -64,19 +64,19 @@ def WriteTo(line, fileType = 0, title = "[  DMP  ]: ", append = False, timestamp
     files[fileType].close()
 
 def WriteLog(line, append = False):
-    WriteTo(line, 0, "[  Log  ]: ", append, timestamp = True)
+    WriteTo(line, 0, "[  LOG  ]: ", append, timestamp = True)
 
 def WriteErr(line, append = False):
-    WriteTo(line, 0, "[  Err  ]: ", append, timestamp = True)
+    WriteTo(line, 0, "[  ERR  ]: ", append, timestamp = True)
 
 def WriteData(line, append = False):
-    WriteTo(line, 0, "[  Dat  ]: ", append, timestamp = True)
+    WriteTo(line, 0, "[  DAT  ]: ", append, timestamp = False)
 
 def Write(line, append = False):
     WriteTo(line, 1, "", append, timestamp = False)
 
-def PrintTo(line, title = "[  DUMP  ]: "):
-    print ("[ " + str(datetime.now()) + " ]" + title + str(line))
+def PrintTo(line, title = "DUMP"):
+    print ("[ " + str(datetime.now()) + " ]" + "[  " + title + "  ]: " + str(line))
 
 fileCount = 0
 dumpLoc = ""
