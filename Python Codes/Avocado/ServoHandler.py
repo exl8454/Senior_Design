@@ -22,6 +22,7 @@ class ArduProcess(threading.Thread):
 def SetServoSpeed(delay_in_milli):
     if not(arduino is None):
         arduino.write("avc del " + str(delay_in_milli))
+        while not(arduino.in_waiting >=
     else:
         PrintTo("No arduino detected", "ERR")
     return new_delay_in_milli
