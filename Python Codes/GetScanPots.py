@@ -50,7 +50,7 @@ def getData(channel = 0, decimalPlaces = 6):
         global lidarDist
         lidarDist = angledist[0].split(",")[1].split("]")[0]
         global lidarOutput
-        lidarOutput = ",TIME = " + timestamp + ",ANGL = " + lidarAngle + ",DIST = " + lidarDist
+        lidarOutput =  timestamp +","+ lidarDist +","+ lidarAngle
         isValid = True
 
 def writeData():
@@ -58,7 +58,7 @@ def writeData():
     global isValid
     if isValid:
         now = datetime.now()
-        file.write(str(now)+","+str(angle)+ lidarOutput + "\n")
+        file.write(str(now)+","+ lidarOutput +","+str(angle) + "\n")
         file.flush()
         isValid = False
     
@@ -85,7 +85,7 @@ lidarAngle = "inf" # Lidar angle
 lidarDist = "inf" # Lidar distance
 lidarOutput = "inf" # Used to combine all
 
-sampleRate = 10 # As in milliseconds
+sampleRate = 5 # As in milliseconds
 
 # For state machine
 startTime = 0
@@ -102,7 +102,7 @@ while(os.path.isfile(fileName)):
 print ("Created new file " + fileName) # Reports new file name
 
 file = open(fileName, "w") # overwrite existing file, otherwise create one
-file.write("Time,Angle,TIME,ANGL,DIST\n")
+file.write("P_Time,RP_TIME,RP_DIST,RP_ANGL,P_Angl\n")
 
 subThread = SubProc()
 subThread.start()

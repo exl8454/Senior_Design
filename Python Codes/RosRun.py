@@ -4,14 +4,9 @@ import subprocess
 # Directly opens input and output stream using PIPE object
 # bufsize = -1 allocates maximum buffer memory for this pipeline
 rtncode = subprocess.Popen(['pwd'], shell = True, stdout = subprocess.PIPE)
-for line in rtncode.stdout:
-    print (line)
 rtncode = subprocess.Popen(['ls', '-a'], shell = True, stdout = subprocess.PIPE)
-for line in rtncode.stdout:
-    print (line)
-rtncode = subprocess.Popen(['./runpy-1.sh'], stdout = subprocess.PIPE)
-while(True):
-    print (rtncode.stdout.readline())
+rtncode = subprocess.run(['./runpy-1.sh'], stdout = subprocess.PIPE)
+print(rtncode.returncode)
     
 print ("End of bash run")
 
