@@ -30,7 +30,7 @@ class ScanProcess(threading.Thread):
         while running:
             GetData()
             endtime = int(round(time.time() * 1000))
-            if(endtime - starttime > 10):
+            if(endtime - starttime > interval):
                 StreamHandler.Write(parser.GetData())
                 starttime = endtime
         StreamHandler.PrintTo("Thread Stopped")
@@ -51,14 +51,11 @@ def GetData(channel = 0, decimalPlaces = 6):
     else:
         StreamHandler.WriteErr("scanProcess is still None")
     
-initProcess = None
 scanProcess = None
-
-initProc = InitProcess()
 scanProc = ScanProcess()
-
 running = False
 
 # For data
 endtime = 0
 starttime = 0
+interval = 10
