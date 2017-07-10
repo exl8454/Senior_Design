@@ -39,15 +39,17 @@ class ScanProcess(threading.Thread):
                 StreamHandler.Write(parser.GetData())
                 starttime = endtime
         StreamHandler.PrintTo("Thread Stopped")
-                
+
+# Start Core
 def StartCore():
-    global scanProc
-    global dataProc
+    global scanProc, running
 
-    StreamHandler.PrintTo("Creating Node...")
-    scanProc.start()
-    scanProc.join()
+    if not(running):
+        StreamHandler.PrintTo("Creating Node...")
+        scanProc.start()
+        scanProc.join()
 
+# Terminate Core
 def TerminateCore():
 	global scanProcess
 
@@ -57,8 +59,7 @@ def TerminateCore():
             #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
             running = False
 
-
-
+# Get Data
 def GetData(channel = 0, decimalPlaces = 6):
     global scanProcess
     if not(scanProcess is None):
