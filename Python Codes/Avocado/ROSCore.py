@@ -33,6 +33,7 @@ class InitProcess(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
+        stream.PrintTo("Starting ROS Service...", "INFO")
         try:
             initProcess = subprocess.Popen('./runpy-1.sh', bufsize = -1, stdout = subprocess.PIPE)
             running = True;
@@ -52,6 +53,7 @@ class ScanProcess(threading.Thread):
         global scanProcess, running
         global endtime, starttime
 
+        stream.PrintTo("Creating ROS Node...", "INFO")
         try:
             scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
             running = True;

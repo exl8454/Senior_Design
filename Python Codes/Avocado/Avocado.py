@@ -28,6 +28,4 @@ if not os.path.exists(avocado_filedir):
 
 stream.InitFiles(avocado_filedir)
 
-stream.PrintTo("Starting ROS Service...", "INFO")
-
 roscore.StartCore()
