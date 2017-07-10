@@ -13,7 +13,7 @@ import time
 # Custom imports
 import LidarParser as parser
 
-class CommControl(threading.Thread):
+class CommProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
