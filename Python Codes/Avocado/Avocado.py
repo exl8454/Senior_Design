@@ -3,7 +3,7 @@
 
 # Native imports
 import os
-import thread
+import _thread
 
 # Third-party imports
 
