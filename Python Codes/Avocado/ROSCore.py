@@ -67,7 +67,7 @@ class CommProcess(threading.Thread):
         while (command != "exit"):
             command = input("AVOCADO>>>")
 
-        stream.PrintTo("Suspending Avocado...", "INFO")
+        stream.PrintTo("Terminating Avocado...", "INFO")
         TerminateCore()
         stream.PrintTo("Goodby!", "INFO")
 
@@ -80,7 +80,6 @@ def StartCore():
         initProc.start()
         scanProc.start()
         commProc.start()
-        initProc.join()
 
 # Terminate Core
 def TerminateCore():

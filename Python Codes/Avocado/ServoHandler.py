@@ -4,7 +4,7 @@
 # Native import
 import threading
 
-# Thrid-part import
+# Thrid-party import
 import serial
 
 # Custom import
