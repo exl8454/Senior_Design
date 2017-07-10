@@ -62,7 +62,7 @@ class CommProcess(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        while running:
+        while True:
             print ("Type 'exit' to stop process...")
             command = ""
             while (command != "exit"):
