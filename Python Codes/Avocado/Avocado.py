@@ -42,4 +42,4 @@ stream.InitFiles(avocado_filedir)
 stream.PrintTo("Starting ROS Service...", "INFO")
 
 roscore.StartCore()
-_thread.start_new_thread(CommandControl(), ("Control-Thread"))
+_thread.start_new_thread(CommandControl(), ("Control-Thread", ))
