@@ -6,7 +6,7 @@ import os
 import signal
 import subprocess
 import threading
-import StreamHandler
+import StreamHandler as stream
 from time import sleep
 import time
 
@@ -38,11 +38,11 @@ class InitProcess(threading.Thread):
             initProcess = subprocess.Popen('./runpy-1.sh', bufsize = -1, stdout = subprocess.PIPE)
             running = True;
         except Exception as oe:
-            StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
-            StreamHandler.WriteErr("\t" + str(oe.strerror))
-            StreamHandler.PrintTo("Terminating process...")
-            StreamHandler.WriteLog("Terminating process...")
-            StreamHandler.CloseAll()
+            stream.WriteErr("From ROSCore.py; StartCore() ")
+            stream.WriteErr("\t" + str(oe.strerror))
+            stream.PrintTo("Terminating process...")
+            stream.WriteLog("Terminating process...")
+            stream.CloseAll()
             running = False;
 
 class ScanProcess(threading.Thread):
@@ -58,27 +58,27 @@ class ScanProcess(threading.Thread):
             scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
             running = True;
         except Exception as oe:
-            StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
-            StreamHandler.WriteErr("\t" + str(oe.strerror))
-            StreamHandler.PrintTo("Terminating process...")
-            StreamHandler.WriteLog("Terminating process...")
-            StreamHandler.CloseAll()
+            stream.WriteErr("From ROSCore.py; StartCore() ")
+            stream.WriteErr("\t" + str(oe.strerror))
+            stream.PrintTo("Terminating process...")
+            stream.WriteLog("Terminating process...")
+            stream.CloseAll()
             running = False;
         
         while running:
             GetData()
             endtime = int(round(time.time() * 1000))
             if(endtime - starttime > interval):
-                StreamHandler.Write(parser.GetData())
+                stream.Write(parser.GetData())
                 starttime = endtime
-        StreamHandler.PrintTo("Thread Stopped")
+        stream.PrintTo("Thread Stopped")
 
 # Start Core
 def StartCore():
     global initProc, scanProc, commProc, running
 
     if not(running):
-        StreamHandler.PrintTo("Creating Node...")
+        stream.PrintTo("Creating Node...")
         initProc.start()
         scanProc.start()
         commProc.start()
@@ -90,7 +90,7 @@ def StartCore():
 def TerminateCore():
 	global scanProcess, initProcess
 
-	StreamHandler.PrintTo("Terminating ROS Service...")
+	stream.PrintTo("Terminating ROS Service...")
 	if not(scanProcess is None) or not(initProcess is None):
             os.kill(initProcess.pid, signal.SIGINT)
             os.kill(scanProcess.pid, signal.SIGINT)
@@ -104,7 +104,7 @@ def GetData(channel = 0, decimalPlaces = 6):
         outputline = scanProcess.stdout.readline()
         parser.ParseData(outputline)
     else:
-        StreamHandler.WriteErr("scanProcess is still None")
+        stream.WriteErr("scanProcess is still None")
     
 scanProcess = None
 initProcess = None
