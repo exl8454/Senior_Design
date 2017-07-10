@@ -36,6 +36,7 @@ class ScanProcess(threading.Thread):
             GetData()
             endtime = int(round(time.time() * 1000))
             if(endtime - starttime > interval):
+                StreamHandler.PrintTo("Getting LIDAR Data...")
                 StreamHandler.Write(parser.GetData())
                 starttime = endtime
         StreamHandler.PrintTo("Thread Stopped")
