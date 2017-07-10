@@ -81,8 +81,6 @@ def StartCore():
         scanProc.start()
         commProc.start()
         initProc.join()
-        scanProc.join()
-        commProc.join()
 
 # Terminate Core
 def TerminateCore():
