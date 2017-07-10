@@ -3,7 +3,6 @@
 
 # Native imports
 import os
-import _thread
 
 # Third-party imports
 
@@ -14,16 +13,6 @@ import ROSCore as roscore
 avocado_config = []
 avocado_filedir = "LIDARDUMP"
 #avocado_filedir = "/home/edward/Desktop/LIDARDUMP"
-
-def CommandControl():
-    print ("Type exit to stop process...")
-    command = ""
-    while (command != "exit"):
-        command = input("AVOCADO>>>")
-
-    stream.PrintTo("Suspending Avocado...", "INFO")
-    roscore.TerminateCore()
-    stream.PrintTo("Goodby!", "INFO")
 
 stream.PrintTo("Avocado 1.0", "INFO")
 stream.PrintTo("Loading configuration file...", "INFO")
@@ -42,4 +31,3 @@ stream.InitFiles(avocado_filedir)
 stream.PrintTo("Starting ROS Service...", "INFO")
 
 roscore.StartCore()
-_thread.start_new_thread(CommandControl())

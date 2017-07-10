@@ -13,6 +13,21 @@ import time
 # Custom imports
 import LidarParser as parser
 
+class CommControl(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while running:
+            print ("Type 'exit' to stop process...")
+            command = ""
+            while (command != "exit"):
+                command = input("AVOCADO>>>")
+
+            stream.PrintTo("Suspending Avocado...", "INFO")
+            roscore.TerminateCore()
+            stream.PrintTo("Goodby!", "INFO")
+
 class ScanProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -36,19 +51,20 @@ class ScanProcess(threading.Thread):
             GetData()
             endtime = int(round(time.time() * 1000))
             if(endtime - starttime > interval):
-                StreamHandler.PrintTo("Getting LIDAR Data...")
                 StreamHandler.Write(parser.GetData())
                 starttime = endtime
         StreamHandler.PrintTo("Thread Stopped")
 
 # Start Core
 def StartCore():
-    global scanProc, running
+    global scanProc, commProc, running
 
     if not(running):
         StreamHandler.PrintTo("Creating Node...")
         scanProc.start()
+        commProc.start()
         scanProc.join()
+        commProc.join()
 
 # Terminate Core
 def TerminateCore():
@@ -71,6 +87,7 @@ def GetData(channel = 0, decimalPlaces = 6):
     
 scanProcess = None
 scanProc = ScanProcess()
+commProc = CommProcess()
 running = False
 
 # For data
