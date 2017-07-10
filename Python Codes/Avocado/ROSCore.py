@@ -62,15 +62,14 @@ class CommProcess(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        while True:
-            print ("Type 'exit' to stop process...")
-            command = ""
-            while (command != "exit"):
-                command = input("AVOCADO>>>")
+        print ("Type 'exit' to stop process...")
+        command = ""
+        while (command != "exit"):
+            command = input("AVOCADO>>>")
 
-            stream.PrintTo("Suspending Avocado...", "INFO")
-            TerminateCore()
-            stream.PrintTo("Goodby!", "INFO")
+        stream.PrintTo("Suspending Avocado...", "INFO")
+        TerminateCore()
+        stream.PrintTo("Goodby!", "INFO")
 
 # Start Core
 def StartCore():
@@ -91,9 +90,9 @@ def TerminateCore():
 
 	stream.PrintTo("Terminating ROS Service...")
 	if not(initProcess is None):
-            os.kill(initProcess.pid, signal.SIGINT)
+            os.killpg(os.getpgid(initProcess.pid), signal.SIGINT)
 	if not(scanProcess is None):
-            os.kill(scanProcess.pid, signal.SIGINT)
+            os.killpg(os.getpgid(scanProcess.pid), signal.SIGINT)
             #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
             running = False
 
