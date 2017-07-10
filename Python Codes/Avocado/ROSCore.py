@@ -28,6 +28,22 @@ class CommProcess(threading.Thread):
             roscore.TerminateCore()
             stream.PrintTo("Goodby!", "INFO")
 
+class InitProcess(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        try:
+            initProcess = subprocess.Popen('./runpy-1.sh', bufsize = -1, stdout = subprocess.PIPE)
+            running = True;
+        except Exception as oe:
+            StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
+            StreamHandler.WriteErr("\t" + str(oe.strerror))
+            StreamHandler.PrintTo("Terminating process...")
+            StreamHandler.WriteLog("Terminating process...")
+            StreamHandler.CloseAll()
+            running = False;
+
 class ScanProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -35,9 +51,9 @@ class ScanProcess(threading.Thread):
     def run(self):
         global scanProcess, running
         global endtime, starttime
-        
+
         try:
-            scanProcess = subprocess.Popen('./runpy-1.sh', bufsize = -1, stdout = subprocess.PIPE)
+            scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
             running = True;
         except Exception as oe:
             StreamHandler.WriteErr("From ROSCore.py; StartCore() ")
@@ -57,21 +73,24 @@ class ScanProcess(threading.Thread):
 
 # Start Core
 def StartCore():
-    global scanProc, commProc, running
+    global initProc, scanProc, commProc, running
 
     if not(running):
         StreamHandler.PrintTo("Creating Node...")
+        initProc.start()
         scanProc.start()
         commProc.start()
+        initProc.join()
         scanProc.join()
         commProc.join()
 
 # Terminate Core
 def TerminateCore():
-	global scanProcess
+	global scanProcess, initProcess
 
 	StreamHandler.PrintTo("Terminating ROS Service...")
-	if not(scanProcess is None):
+	if not(scanProcess is None) or not(initProcess is None):
+            os.kill(initProcess.pid, signal.SIGINT)
             os.kill(scanProcess.pid, signal.SIGINT)
             #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
             running = False
@@ -86,7 +105,9 @@ def GetData(channel = 0, decimalPlaces = 6):
         StreamHandler.WriteErr("scanProcess is still None")
     
 scanProcess = None
+initProcess = None
 scanProc = ScanProcess()
+initProc = InitProcess()
 commProc = CommProcess()
 running = False
 
