@@ -84,15 +84,15 @@ def StartCore():
 
 # Terminate Core
 def TerminateCore():
-	global scanProcess, initProcess
+    global scanProcess, initProcess
 
-	stream.PrintTo("Terminating ROS Service...")
-	if not(scanProcess is None):
-            os.killpg(os.getpgid(scanProcess.pid), signal.SIGINT)
-        if not(initProcess is None):
-            os.killpg(os.getpgid(initProcess.pid), signal.SIGINT)
-            
-        running = False
+    stream.PrintTo("Terminating ROS Service...")
+    if not(scanProcess is None):
+        os.killpg(os.getpgid(scanProcess.pid), signal.SIGINT)
+    if not(initProcess is None):
+        os.killpg(os.getpgid(initProcess.pid), signla.SIGINT)
+        
+    running = False
 
 # Get Data
 def GetData(channel = 0, decimalPlaces = 6):
