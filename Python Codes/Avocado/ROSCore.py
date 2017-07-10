@@ -25,7 +25,7 @@ class CommProcess(threading.Thread):
                 command = input("AVOCADO>>>")
 
             stream.PrintTo("Suspending Avocado...", "INFO")
-            roscore.TerminateCore()
+            TerminateCore()
             stream.PrintTo("Goodby!", "INFO")
 
 class InitProcess(threading.Thread):
