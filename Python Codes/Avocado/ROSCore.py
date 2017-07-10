@@ -12,6 +12,7 @@ import time
 
 # Custom imports
 import LidarParser as parser
+import ServoHandler as servo
 
 class InitProcess(threading.Thread):
     def __init__(self):
