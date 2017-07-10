@@ -3,6 +3,7 @@
 
 # Native imports
 import os
+import thread
 
 # Third-party imports
 
@@ -30,14 +31,15 @@ stream.InitFiles(avocado_filedir)
 
 stream.PrintTo("Starting ROS Service...", "INFO")
 
+thread.start_new_thread(CommandControl(), ())
 roscore.StartCore()
 
-print ("Type exit to stop process...")
-command = input("AVOCADO>>>")
-while(command != "exit"):
-    command = input("AVOCADO>>>")
+def CommandControl():
+    print ("Type exit to stop process...")
+    command = ""
+    while (command != "exit"):
+        command = input("AVOCADO>>>")
 
-stream.PrintTo("Suspending Avocado...", "INFO")
-roscore.TerminateCore()
-#TODO Add shutdown procedure
-stream.PrintTo("Goodbye!", "INFO")
+    stream.PrintTo("Suspending Avocado...", "INFO")
+    roscore.TerminateCore()
+    stream.PrintTo("Goodby!", "INFO")
