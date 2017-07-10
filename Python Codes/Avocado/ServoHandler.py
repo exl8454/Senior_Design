@@ -22,8 +22,8 @@ class ArduProcess(threading.Thread):
 # Attempts to start arduino on target port.
 # If started, arduino should return start code.
 # Otherwise, arduino will return -1
-def StartServo(target_port):
-    arduino = serial.Serial(target_port, 115200, timeout = 10)
+def StartServo(target_port, time_out):
+    arduino = serial.Serial(target_port, 115200, timeout = time_out)
     arduino.write("avc_start\n")
     while not(arduino.in_waiting >= 4):
         pass
@@ -62,3 +62,11 @@ def StopServo():
     else:
         stream.PrintTo("No arduino detected", "ERR")
         return -1
+
+def GetServoAngle():
+    if not(arduino is None):
+        arduino.write("avc get agl\n")
+        while not(arduino.in_waiting >= 3):
+            pass
+        code = arduino.read()
+        code = str(code.decode('utf-8'))

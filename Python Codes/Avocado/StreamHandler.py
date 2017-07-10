@@ -101,6 +101,7 @@ def ReadConfig():
         openFile.write("avocado_read_interval=10\n")
         openFile.write("avocado_lidar_scan_type=0\n")
         openFile.write("avocado_servo_interval=15\n")
+        openFile.write("avocado_serial_timeout=5\n")
         openFile.close()
         return -1
     else:
@@ -111,10 +112,12 @@ def ReadConfig():
         avocado_read_interval = int(line[1].split("=")[1])
         avocado_lidar_scan_type = int(line[2].split("=")[1])
         avocado_servo_interval = int(line[3].split("=")[1])
+        avocado_serial_timeout = int(line[3].split("=")[1])
         return [avocado_dump_data,
                 avocado_read_interval,
                 avocado_lidar_scan_type,
-                avocado_servo_interval]
+                avocado_servo_interval,
+                avocado_serial_timeout]
         openFile.close()
 
 fileCount = 0
