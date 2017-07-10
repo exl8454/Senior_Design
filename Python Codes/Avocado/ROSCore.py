@@ -13,21 +13,6 @@ import time
 # Custom imports
 import LidarParser as parser
 
-class CommProcess(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-
-    def run(self):
-        while running:
-            print ("Type 'exit' to stop process...")
-            command = ""
-            while (command != "exit"):
-                command = input("AVOCADO>>>")
-
-            stream.PrintTo("Suspending Avocado...", "INFO")
-            TerminateCore()
-            stream.PrintTo("Goodby!", "INFO")
-
 class InitProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -35,8 +20,7 @@ class InitProcess(threading.Thread):
     def run(self):
         stream.PrintTo("Starting ROS Service...", "INFO")
         try:
-            initProcess = subprocess.Popen('./runpy-1.sh', bufsize = -1, stdout = subprocess.PIPE)
-            running = True;
+            initProcess = subprocess.Popen('./runpy-1.sh')
         except Exception as oe:
             stream.WriteErr("From ROSCore.py; StartCore() ")
             stream.WriteErr("\t" + str(oe.strerror))
@@ -55,7 +39,7 @@ class ScanProcess(threading.Thread):
 
         stream.PrintTo("Creating ROS Node...", "INFO")
         try:
-            scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = -1, stdout = subprocess.PIPE)
+            scanProcess = subprocess.Popen('./runpy-2.sh', bufsize = 1, stdout = subprocess.PIPE)
             running = True;
         except Exception as oe:
             stream.WriteErr("From ROSCore.py; StartCore() ")
@@ -73,12 +57,27 @@ class ScanProcess(threading.Thread):
                 starttime = endtime
         stream.PrintTo("Thread Stopped")
 
+class CommProcess(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while running:
+            print ("Type 'exit' to stop process...")
+            command = ""
+            while (command != "exit"):
+                command = input("AVOCADO>>>")
+
+            stream.PrintTo("Suspending Avocado...", "INFO")
+            TerminateCore()
+            stream.PrintTo("Goodby!", "INFO")
+
 # Start Core
 def StartCore():
     global initProc, scanProc, commProc, running
 
     if not(running):
-        stream.PrintTo("Creating Node...")
+        stream.PrintTo("Creating Node...", "INFO")
         initProc.start()
         scanProc.start()
         commProc.start()
