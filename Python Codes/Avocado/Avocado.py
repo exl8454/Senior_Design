@@ -31,7 +31,7 @@ stream.InitFiles(avocado_filedir)
 
 stream.PrintTo("Starting ROS Service...", "INFO")
 
-thread.start_new_thread(CommandControl(), ())
+_thread.start_new_thread(CommandControl(), ())
 roscore.StartCore()
 
 def CommandControl():
