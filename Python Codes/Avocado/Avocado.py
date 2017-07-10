@@ -15,7 +15,7 @@ avocado_config = []
 avocado_filedir = "LIDARDUMP"
 #avocado_filedir = "/home/edward/Desktop/LIDARDUMP"
 
-def CommandControl(threadname):
+def CommandControl():
     print ("Type exit to stop process...")
     command = ""
     while (command != "exit"):
@@ -42,4 +42,4 @@ stream.InitFiles(avocado_filedir)
 stream.PrintTo("Starting ROS Service...", "INFO")
 
 roscore.StartCore()
-_thread.start_new_thread(CommandControl(), ("Control-Thread", ))
+_thread.start_new_thread(CommandControl())
