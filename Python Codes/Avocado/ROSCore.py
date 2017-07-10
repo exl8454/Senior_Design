@@ -90,8 +90,9 @@ def TerminateCore():
 	global scanProcess, initProcess
 
 	stream.PrintTo("Terminating ROS Service...")
-	if not(scanProcess is None) or not(initProcess is None):
+	if not(initProcess is None):
             os.kill(initProcess.pid, signal.SIGINT)
+	if not(scanProcess is None):
             os.kill(scanProcess.pid, signal.SIGINT)
             #os.killpg(os.getpgid(scanProc.pid), signal.SIGINT)
             running = False
