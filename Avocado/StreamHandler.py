@@ -1,6 +1,7 @@
 # StreamHandler.py
 # Handles data input and output
 
+# Native imports
 import os
 import os.path
 import time
@@ -11,9 +12,11 @@ def CloseAll():
     files[0].close()
     files[1].close()
 
+# Closes only dump file
 def CloseDump():
     files[0].close()
 
+# Closes only data file
 def CloseData():
     files[1].close()
 
@@ -42,8 +45,7 @@ def InitFiles(directory):
     
 # WriteTo function writes to file. If append parameter is left false,
 # function will force set \n character at the end.
-# If fileType parameter is left as 0, function will write to dump file
-# as default.
+# If fileType parameter is left as 0, function will write to dump file as default.
 # If title parameter is not set, it will also send default expression.
 # Anything in line will forced converted to string type.
 def WriteTo(line, fileType = 0, title = "[  DMP  ]: ", append = False, timestamp = True):
@@ -75,7 +77,7 @@ def WriteData(line, append = False):
 def Write(line, append = False):
     WriteTo(line, 1, "", append, timestamp = False)
 
-def PrintTo(line, title = "DUMP"):
+def PrintTo(line, title = "DMP"):
     print ("[ " + str(datetime.now()) + " ]" + "[  " + title + "  ]: " + str(line))
 
 def OpenFile(loc):
@@ -95,31 +97,35 @@ def ReadConfig():
     status = OpenFile("config.avocado")
     if status != 0:
         PrintTo("Avocado didn't detect its configuration file!", "ERR")
-        PrintTo("Auto-generating default configuration...", "INFO")
+        PrintTo("Auto-generating default configuration...", "INF")
         openFile = open("config.avocado", "w")
         openFile.write("avocado_dump_data=False\n")
         openFile.write("avocado_read_interval=10\n")
         openFile.write("avocado_lidar_scan_type=0\n")
         openFile.write("avocado_servo_interval=15\n")
         openFile.write("avocado_serial_timeout=5\n")
+        openFile.write("avocado_dump_location=AVC_DATA\n");
         openFile.close()
         return -1
     else:
-        PrintTo("Config file loaded, changing settings...", "INFO")
+        PrintTo("Config file loaded, changing settings...", "INF")
         line = openFile.read()
         line = line.split("\n")
         avocado_dump_data = line[0].split("=")[1] in ['True', 'False']
         avocado_read_interval = int(line[1].split("=")[1])
         avocado_lidar_scan_type = int(line[2].split("=")[1])
         avocado_servo_interval = int(line[3].split("=")[1])
-        avocado_serial_timeout = int(line[3].split("=")[1])
+        avocado_serial_timeout = int(line[4].split("=")[1])
+        avocado_dump_location = str(line[5].split("=")[1])
         return [avocado_dump_data,
                 avocado_read_interval,
                 avocado_lidar_scan_type,
                 avocado_servo_interval,
-                avocado_serial_timeout]
+                avocado_serial_timeout,
+                avocado_dump_location]
         openFile.close()
 
+# Variables
 fileCount = 0
 dumpLoc = ""
 dataLoc = ""
