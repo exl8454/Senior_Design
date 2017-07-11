@@ -1,7 +1,10 @@
 /* Avcodado Arduino Controller */
+/* Upload this sketch to Arduino platform, then connect the Arduino to RPi */
 
+/* Headers */
 #include <Servo.h>
 
+/* Variables */
 int angle = 0;
 int servoPin = 9;
 int angle_amt = 1;
@@ -16,47 +19,51 @@ Servo servo;
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(115200); /* Start comm */
 
+  /* We will wait for start signal... */
   while(Serial.available() < 3);
-
   Serial.readBytesUntil('\n', serial_buffer, 100);
 
   token = strtok(serial_buffer, "\n");
-  if(!strcmp(token, "avc_start"))
+  if(!strcmp(token, "avc_start")) /* If start signal was received */
   {
-    Serial.print("ack\n");
-    servo.attach(servoPin);
+    Serial.print("ack\n"); /* Send acknowledge code back */
+    servo.attach(servoPin); /* Attach servo to default pin */
   }
 }
 
 void loop()
 {
-  if(Serial.available())
+  if(Serial.available()) /* Statement only works when RPi sent code */
   {
-    Serial.readBytesUntil('\n', serial_buffer, 100);
+    Serial.readBytesUntil('\n', serial_buffer, 100); /* Read in max size of 100 */
 
+    /* Split single-line command into code-by-code */
+    /* Since delimiter is a whitespace, arduino will look through whitespaces */
     token = strtok(serial_buffer, " ");
-    if(!strcmp(token, "avc"))
+    while(token != null)
     {
-      token = strtok(NULL, " ");
-      if(!strcmp(token, "del"))
+      if(!strcmp(token, "avc")) /* Proper start signal */
       {
-        token = strtok(NULL, " ");
-        del = atoi(token);
+        token = strtok(NULL, " "); /* Read next */
+        if(!strcmp(token, "del")) /* If next code is delay */
+        {
+          token = strtok(NULL, " "); /* Read next */
+          del = atoi(token); /* Convert next code to int to set delat */
+        }
+        if(!strcmp(token, "get")) /* RPi requesting data from Arduino */
+        {
+          token = strtok(NULL, " "); /* Read next */
+          if(!strcmp(token, "agl")) /* Angle request code */
+            getAngle(); /* Return angle */
+        }
       }
-      if(!strcmp(token, "get"))
-      {
-        token = strtok(NULL, " ");
-        if(!strcmp(token, "agl"))
-          getAngle();
-      }
+      token = strtok(NULL, " "); /* Check if other command is waiting */
     }
-    while(token != NULL)
-      token = strtok(NULL, " ");
   }
 
-  sweep();
+  sweep(); /* For moving servo */
 }
 
 void getAngle()
