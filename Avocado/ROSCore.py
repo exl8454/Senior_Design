@@ -1,5 +1,7 @@
 # ROSCore.py
 # Core for ROS Node init and scan
+# NOTE
+# POTENTIOMETER HAS NOT YET IMPLEMENTED. PURELY READS LIDAR DATA ONLY ATM.
 
 # Native imports
 import os
@@ -14,6 +16,7 @@ import time
 import LidarParser as parser
 import ServoHandler as servo
 
+# Thread class to start roslaunch
 class InitProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -30,6 +33,7 @@ class InitProcess(threading.Thread):
             stream.CloseAll()
             running = False;
 
+# Thread class to start rosrun
 class ScanProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -58,6 +62,9 @@ class ScanProcess(threading.Thread):
                 starttime = endtime
         stream.PrintTo("Thread Stopped")
 
+# Still under testing
+# Handles command-line process
+# TODO Move to separate script for better reading
 class CommProcess(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
@@ -102,7 +109,8 @@ def GetData(channel = 0, decimalPlaces = 6):
         parser.ParseData(outputline)
     else:
         stream.WriteErr("scanProcess is still None")
-    
+
+# Variables
 scanProcess = None
 initProcess = None
 scanProc = ScanProcess()
