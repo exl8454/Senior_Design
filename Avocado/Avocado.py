@@ -10,34 +10,34 @@ import os
 import StreamHandler as stream
 import ROSCore as roscore
 
-avocado_config = []
-avocado_filedir = "LIDARDUMP"
-#avocado_filedir = "/home/edward/Desktop/LIDARDUMP"
+avocado_config = [] # To save configuration
+avocado_filedir = "LIDARDUMP" # Default file directory
+# Located inside Avocado folder
 
+# Print start-up to Python shell
 stream.PrintTo("Avocado 1.0", "INFO")
 stream.PrintTo("Loading configuration file...", "INFO")
 
+# Loads configuration from file.
+# If configuration file is not found, Avocado will create new one with default
+# Settings
 avocado_config = stream.ReadConfig()
 if(avocado_config == -1):
     avocado_config = stream.ReadConfig()
 
+# Dump folder is re-directed from here
+avocado_filedir = avocado_config[5]
+
+# Starts linking native files(data and dump) with Python
+# Same as config file, if saving directory doesn't exist, Avocado will make
+# new one
 stream.PrintTo("Setting local data dump position", "INFO")
 stream.PrintTo("Avocado will automatically create directory if it doesn't exist...", "INFO")
 if not os.path.exists(avocado_filedir):
 	os.makedirs(avocado_filedir)
 
+# Once the directory is created, file linking is started.
 stream.InitFiles(avocado_filedir)
 
-stream.PrintTo("Starting ROS Service...", "INFO")
-
+# Starts back-end scripts. Refer to ROSCore.py
 roscore.StartCore()
-
-print ("Type exit to stop process...")
-command = input("AVOCADO>>>")
-while(command != "exit"):
-    command = input("AVOCADO>>>")
-
-stream.PrintTo("Suspending Avocado...", "INFO")
-roscore.TerminateCore()
-#TODO Add shutdown procedure
-stream.PrintTo("Goodbye!", "INFO")

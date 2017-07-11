@@ -2,3 +2,5 @@ avocado_dump_data=False
 avocado_read_interval=10
 avocado_lidar_scan_type=0
 avocado_servo_interval=15
+avocado_serial_timeout=5
+avocado_dump_location=AVC_DATA

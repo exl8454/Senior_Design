@@ -1,0 +1,5 @@
+[ 2017-07-10 23:35:14.904909 ][  ERR  ]: From ROSCore.py; StartCore() 
+[ 2017-07-10 23:35:14.904909 ][  ERR  ]: 	%1 is not a valid Win32 application
+[ 2017-07-10 23:35:14.904909 ][  ERR  ]: From ROSCore.py; StartCore() 
+[ 2017-07-10 23:35:14.904909 ][  ERR  ]: 	%1 is not a valid Win32 application
+[ 2017-07-10 23:35:14.904909 ][  LOG  ]: Terminating process...
