@@ -1,5 +1,7 @@
 # ServoHandler.py
 # Handles servo on Arduino
+# NOTE
+# HAVE NOT YET IMPLEMENTED SINCE I HAVE NO SERVO TO TEST
 
 # Native import
 import threading
@@ -48,6 +50,7 @@ def SetServoSpeed(delay_in_milli):
         stream.PrintTo("No arduino detected", "ERR")
         return -1
 
+# Sends signal to Arduino to force stop servo
 def StopServo():
     if not(arduino is None):
         arduino.write("avc stp\n")
@@ -63,6 +66,7 @@ def StopServo():
         stream.PrintTo("No arduino detected", "ERR")
         return -1
 
+# Requests servo's current angle then saves to a variable
 def GetServoAngle():
     if not(arduino is None):
         arduino.write("avc get agl\n")
@@ -70,3 +74,7 @@ def GetServoAngle():
             pass
         code = arduino.read()
         code = str(code.decode('utf-8'))
+        global servo_angle = int(code)
+
+# Variables
+servo_angle = 0;
