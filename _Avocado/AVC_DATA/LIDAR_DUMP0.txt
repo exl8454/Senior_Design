@@ -1,0 +1,6 @@
+[ 2017-07-13 17:01:50.570351 ][  ERR  ]: From ROSCore.py; StartCore() 
+[ 2017-07-13 17:01:50.571353 ][  ERR  ]: 	The system cannot find the file specified
+[ 2017-07-13 17:01:50.572355 ][  ERR  ]: From ROSCore.py; StartCore() 
+[ 2017-07-13 17:01:50.572854 ][  ERR  ]: 	The system cannot find the file specified
+[ 2017-07-13 17:01:50.578863 ][  LOG  ]: Terminating process...
+[ 2017-07-13 17:01:53.987124 ][  LOG  ]: Terminating process...
