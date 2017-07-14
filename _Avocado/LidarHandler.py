@@ -61,9 +61,11 @@ def process(raw):
     _new_scan = bool((b2i(raw[0]) >> 1) & 0b1)
     quality = b2i(raw[0]) >> 2
     if new_scan == _new_scan:
+        logger.PrintTo("From process", "ERR")
         logger.PrintTo("New Scan Flag Mismatch", "ERR")
     check_bit = b2i(raw[0]) >> 2
     if check_bit != 1:
+        logger.PrintTo("From process", "ERR")
         logger.PrintTo("Check bit not equal to 1", "ERR")
     angle = ((b2i(raw[1]) >> 1) + (b2i(raw[2]) << 7)) / 64.
     distance = (b2i(raw[3]) + (b2i(raw[4]) << 8)) / 4.
@@ -73,17 +75,22 @@ class LidarProcess(object):
     _port = None    # For serial object
     port = ''       # For port selection
     port_timeout = 5# For UART data xmit timeout
+    baudrate = 115200
 
-    def __init__(self, port, timeout = 5):
+    def __init__(self, port, timeout = 1):
         self.port = port
         self.baudrate = 115200
-        self.timeout = timeout
+        self.port_timeout = timeout
         
         self.motor_speed = MOTOR_PWM
-        self.motor_running = None
+        self.motor_running = False
 
         self.scanning = False
-        
+
+        self.openPort()
+        self.reset()
+        self.clearBuffer()
+        self.startMotor()
     '''
         Returns target port
         Returns: Serial object of port
@@ -104,16 +111,17 @@ class LidarProcess(object):
         If target port is not set, it will send error
         Exception: Port is None or Port is not found
     '''
-    def open():
+    def openPort(self):
         if self._port is not None:
-            self.close()
-        elif self.port is None:
+            self._port.close()
+        if self.port is None:
             logger.WriteErr("Target port is not set!")
+            return -1
         try:
-            self._port = serial.Serial(
-                self.port, 115200,
-                parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE,
-                timeout = self.port_timeout, dsrdtr = True)
+            self._port = serial.Serial(\
+                self.port, self.baudrate,\
+                parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE,\
+                timeout = self.port_timeout)
         except serial.SerialException as ser:
             logger.WriteErr("\/Encountered error while trying to open port\/")
             logger.WriteErr(err)
@@ -121,7 +129,7 @@ class LidarProcess(object):
     '''
         Closes serial port
     '''
-    def close():
+    def closePort(self):
         if self._port is not None:
             self._port.close()
 
@@ -132,9 +140,9 @@ class LidarProcess(object):
         self._port.write(_cmd)
         return
 
-    def sendCmd(self, cmd, value):
+    def sendCmdWithVal(self, cmd, value):
         size = struct.pack('B', len(value))
-        pack = SYNC_BYTE + cmd + size + payload
+        pack = SYNC_A + cmd + size + value
         cs = 0 # checksum
         for v in struct.unpack('B' * len(pack), pack):
             cs ^= v
@@ -146,27 +154,30 @@ class LidarProcess(object):
         self.motor_speed = pwm
         if self.motor_running:
             pack = struct.pack("<H", self.motor_speed)
-            self.sendCmd(SPWM, pack)
+            self.sendCmdWithVal(SPWM, pack)
         return
 
     def startMotor(self):
         self._port.setDTR(False)
-        self.setSpeed(self.motor_speed)
+        #self.setSpeed(self.motor_speed)
+        #self.setSpeed(MOTOR_PWM)
         self.motor_running = True
         return
 
     def stopMotor(self):
-        self.setSpeed(0)
-        time.sleep(0.005)
-
         self._port.setDTR(True)
+        #self.setSpeed(0)
+        #time.sleep(0.005)
         self.motor_running = False
+        return
 
     def readDesc(self):
         desc = self._port.read(DESC_LEN)
         if len(desc) != DESC_LEN:
+            logger.PrintTo("From readDesc", "ERR")
             logger.PrintTo("Discriptor length mismatch", "ERR")
-        elif not desc.startswith(SYNCA + SYNCB):
+        elif not desc.startswith(SYNC_A + SYNC_B):
+            logger.PrintTo("From readDesc", "ERR")
             logger.PrintTo("Incorrect starting bytes", "ERR")
         is_single = b2i(desc[-2]) == 0
         return [b2i(desc[2]), is_single, b2i(desc[-1])]
@@ -179,17 +190,21 @@ class LidarProcess(object):
 
     def readInfo(self):
         if self._port.inWaiting() > 0:
+            logger.PrintTo("From readInfo", "ERR")
             logger.PrintTo("Buffer is not empty. Try flushing out buffer first", "ERR")
             return -1
         self.sendCmd(INFO)
         desc = self.readDesc()
         if desc[0] != INFO_LEN:
+            logger.PrintTo("From readInfo", "ERR")
             logger.PrintTo("Info length mismatch", "ERR")
             return -1
         if not desc[1]:
+            logger.PrintTo("From readInfo", "ERR")
             logger.PrintTo("Response is not a single (Its multiple)", "ERR")
             return -1
         if desc[2] != INFO_TYPE:
+            logger.PrintTo("From readInfo", "ERR")
             logger.PrinTo("Response expected as info, received " + str(desc[2]) + " instead", "ERR")
             return -1
 
@@ -206,17 +221,21 @@ class LidarProcess(object):
 
     def readStat(self):
         if self._port.inWaiting() > 0:
+            logger.PrintTo("From readStat", "ERR")
             logger.PrintTo("Buffer is not empty. Try flushing out buffer first", "ERR")
             return -1
         self.sendCmd(STAT)
         desc = self.readDesc()
         if desc[0] != STAT_LEN:
-            logger.PrintTo("Info length mismatch", "ERR")
+            logger.PrintTo("From readStat", "ERR")
+            logger.PrintTo("Stat length mismatch", "ERR")
             return -1
         if not desc[1]:
+            logger.PrintTo("From readStat", "ERR")
             logger.PrintTo("Response is not a single (Its multiple)", "ERR")
             return -1
         if desc[2] != STAT_TYPE:
+            logger.PrintTo("From readStat", "ERR")
             logger.PrinTo("Response expected as info, received " + str(desc[2]) + " instead", "ERR")
             return -1
         raw = self.readResp(desc[0])
@@ -226,9 +245,11 @@ class LidarProcess(object):
 
     def clearBuffer(self):
         if self.scanning:
+            logger.PrintTo("From clearBuffer", "ERR")
             logger.PrintTo("Buffer cannot be cleared: Still scanning", "ERR")
-            return -1
+            return 0
         self._port.flushInput()
+        return 1
 
     def stopScan(self):
         self.sendCmd(STOP)
@@ -241,28 +262,37 @@ class LidarProcess(object):
     '''
     def startScan(self):
         if self.scanning:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Already scanning", "ERR")
             return -1
         stat = self.readStat()
         if stat[0] == 2:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Error in sensor. Resetting...", "ERR")
             self.reset()
             stat = self.readStat()
             if stat[0] == 2:
+                logger.PrintTo("From startScan()", "ERR")
                 logger.PrintTo("Cannot reset LIDAR; hardware fault?", "ERR")
                 return -1
         elif stat[0] == 1:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Scanning with LIDAR Warning", "INF")
             
         self.sendCmd(SCAN)
+        
         desc = self.readDesc()
+        print (desc)
         if desc[0] != SCAN_LEN:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Scan size mismatch", "ERR")
             return -1
         if desc[1]:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Head returned single response", "ERR")
             return -1
         if desc[2] != SCAN_TYPE:
+            logger.PrintTo("From startScan()", "ERR")
             logger.PrintTo("Not a proper scan tytpe", "ERR")
             return -1
         self.scanning = True
@@ -270,6 +300,42 @@ class LidarProcess(object):
 
     def reset(self):
         self.sendCmd(REST)
+        time.sleep(3)
+        self.clearBuffer()
+        return
+
+    def getSample(self, leaveHigh = False):
+        if not self.motor_running:
+            self.startMotor()
+        if not self.scanning:
+            self.startScan()
+        pack_size = SCAN_LEN
+        
+        #if self.clearBuffer() == 0:
+            #logger.PrintTo("Cannot take sampe", "ERR")
+            
+        raw = self.readResp(pack_size)
+        if not leaveHigh:
+            self.stopScan()
+            self.clearBuffer()
+        return process(raw)
+
+    def getScan(self):
+        if not self.motor_running:
+            self.startMotor()
+        if not self.scanning:
+            self.startScan()
+        scan = []
+        startNode = self.getSample(False)
+        while not startNode[0]:
+            startNode = self.getSample(False)
+        scan.insert(0, startNode)
+        node = self.getSample(False)
+        while not node[0]:
+            scan.append(node)
+            node = self.getSample(False)
+
+        return scan
 
 class LidarHandler(threading.Thread):
     def __init__(self):
