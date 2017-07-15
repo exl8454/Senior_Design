@@ -62,6 +62,7 @@ elif platform.system() in ['linux', 'Linux', 'LINUX']:
 logger.printInfo("LIDAR port is set to " + portLocation)
 
 # TODO Add start sequence
+# Link Lidar first
 
 '''
 # Starts back-end scripts. Refer to ROSCore.py
