@@ -28,6 +28,10 @@ filecount = 0
 # Config first
 config.readConfig()
 
+# Folder check (Checks if folder exsists)
+if not (os.path.isdir(config.settings[5])):
+        os.mkdir(config.settings[5])
+
 # Load default dump location
 avocado_filedir = config.settings[5]
 dataDumpLocation = config.settings[5] + "/DATA_" + str(filecount) + "_" + str(datetime.today().date()) + ".csv"
@@ -35,13 +39,17 @@ logDumpLocation = config.settings[5] + "/DUMP_" + str(filecount) + "_" + str(dat
 
 while os.path.isfile(dataDumpLocation):
         filecount += 1
-        dataDumpLocation = config.settings[5] + "/DATA_" + str(filecount)  + "_" + str(datetime.today().date()) +  ".csv"
-        logDumpLocation = config.settings[5] + "/DUMP_" + str(filecount)  + "_" + str(datetime.today().date()) +  ".txt"
+        dataDumpLocation = config.settings[5] + "/DATA_" + str(filecount)  + "_" + \
+                           str(datetime.today().date()) +  ".csv"
+        logDumpLocation = config.settings[5] + "/DUMP_" + str(filecount)  + "_" + \
+                          str(datetime.today().date()) +  ".txt"
 
 while os.path.isfile(logDumpLocation):
         filecount += 1
-        dataDumpLocation = config.settings[5] + "/DATA_" + str(filecount)  + "_" + str(datetime.today().date()) +  ".csv"
-        logDumpLocation = config.settings[5] + "/DUMP_" + str(filecount)  + "_" + str(datetime.today().date()) +  ".txt"
+        dataDumpLocation = config.settings[5] + "/DATA_" + str(filecount)  + "_" + \
+                           str(datetime.today().date()) +  ".csv"
+        logDumpLocation = config.settings[5] + "/DUMP_" + str(filecount)  + "_" + \
+                          str(datetime.today().date()) +  ".txt"
 
 logger.printInfo("Data dump location set to\/")
 logger.printInfo(dataDumpLocation)
