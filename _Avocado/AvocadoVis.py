@@ -11,28 +11,99 @@ import pygame
 # Avocado Import
 from LidarHandler import LidarHandler as Lidar
 
+def remap(value, fmin, fmax, tmin, tmax):
+    fspan = fmax - fmin
+    tspan = tmax - tmin
+
+    scaled = float(value - fmin) / float(fspan)
+
+    return tmin + (scaled * tspan)
+def intensity(node):
+    intensity = node[1]
+    if intensity > 30:
+        intensity = 30
+    intensity /= 30 # Suppose to be max 100; never reaches tho
+    red = (0 * intensity) + 0
+    green = (255 * intensity) + 0
+    blue = (-255 * intensity) + 255
+    return (red, green, blue)
+
 def getRect(angle, dist):
     rad = math.radians(angle)
     if dist == 0:
-        return [350, 350]
-    x = 350 + (((dist * math.cos(rad)) / 6000) * 300)
-    y = 350 + (((dist * math.sin(rad)) / 6000) * 300)
+        return [300, 300]
+    x = dist * math.cos(rad)
+    y = dist * math.sin(rad)
+    x = remap(x, 0, 6000, -3000, 3000)
+    y = remap(y, 0, 6000, -3000, 3000)
+    x = remap(x, -3000, 3000, 0, 300)
+    y = remap(y, -3000, 3000, 0, 300)
+    x += 300
+    y += 300
+    
     return [x, y]
+
+def fullLine(nodes):
+    node_size = len(nodes)
+    i = 0
+    for node in nodes:
+        if i > node_size - 3:
+            break;
+        
+        if node[3] == 0:
+            i += 1
+            pass
+        else:
+            start = getRect(node[2], node[3])
+            next_node = nodes[i + 1]
+            if next_node[3] == 0:
+                next_node = node
+            end = getRect(next_node[2], next_node[3])
+            pygame.draw.line(screen, BLACK, start, end)
+            i += 1
+
+    last_node = nodes[node_size - 1]
+    start = getRect(node[2], node[3])
+    first_node = nodes[0]
+    end = getRect(next_node[2], next_node[3])
+    pygame.draw.line(screen, BLACK, start, end)
+    return
+
+def fullPoint(nodes):
+    for node in nodes:
+        if node[3] == 0:
+            pass
+        else:
+            center = getRect(node[2], node[3])
+            pygame.draw.rect(screen, intensity(node), [center[0] - 2, center[1] + 2, 2, 2])
+    return
+
+def singlePoint(node):
+    i = 0
+    while i < 360:
+        if node[3] == 0:
+            pass
+        else:
+            center = getRect(node[2], node[3])
+            pygame.draw.rect(screen, intensity(node), [center[0] - 2, center[1] + 2, 2, 2])
+        i += 1
+        node = lidar.getNode()
+    return
 
 BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 
 done = False
-
-lidar = Lidar("COM11")
+lidar = Lidar("COM6")
 time.sleep(1)
-nodes = lidar.getFullScan()
+nodes = None
+node = None
 
 clock = pygame.time.Clock()
 
 pygame.init()
 
-size = (700, 700)
+size = (600, 600)
 pygame.display.set_caption("Avocado Visualizer")
 screen = pygame.display.set_mode(size)
 
@@ -40,42 +111,19 @@ while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
-
-    node_size = len(nodes)
     
     screen.fill(WHITE)
-    i = 0
-    j = 1
 
-    for node in nodes:
-        if i > node_size - 2:
-            break;
-        start = getRect(node[2], node[3])
-        next_node = nodes[i + 1]
-        end = getRect(next_node[2], next_node[3])
-        pygame.draw.line(screen, BLACK, start, end)
-        i += 1
+    # Single-point continuous display points
+    singlePoint(lidar.getNode())
 
-    last_node = nodes[node_size - 1]
-    start = getRect(node[2], node[3])
-    first_node = nodes[0]
-    end = getRect(next_node[2], next_node[3])
-    pygame.draw.line(screen, BLACK, start, end)
+    # Full scan display points
+    #fullPoint(lidar.getFullScan())
 
-    '''
-    for node in nodes:
-        center = getRect(node[2], node[3])
-        pygame.draw.rect(screen, BLACK, [center[0] - 1, center[1] + 1, center[0] + 1, center[1] - 1])
-    '''
-        
-    #pygame.draw.line(screen, BLACK, [300, 300], [400, 300])
-    #pygame.draw.line(screen, BLACK, [400, 300], [400, 400])
-    #pygame.draw.line(screen, BLACK, [400, 400], [300, 400])
-    #pygame.draw.line(screen, BLACK, [300, 400], [300, 300])
+    # Full scan display lines
+    #fullLine(lidar.getFullScan())
     
     pygame.display.flip()
-    clock.tick(120)
-
-    nodes = lidar.getFullScan()
+    clock.tick(60)
 
 pygame.quit()
