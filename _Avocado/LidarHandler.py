@@ -66,13 +66,16 @@ def process(raw):
     if new_scan == _new_scan:
         logger.printErr("From process")
         logger.printErr("New Scan Flag Mismatch")
+        return [], 0
     check_bit = b2i(raw[1]) & 0b1
     if check_bit != 1:
         logger.printErr("From process")
         logger.printErr("Check bit not equal to 1")
+        return [], 0
     angle = ((b2i(raw[1]) >> 1) + (b2i(raw[2]) << 7)) / 64.
     distance = (b2i(raw[3]) + (b2i(raw[4]) << 8)) / 4.
-    return [new_scan, quality, angle, distance]
+    data = [new_scan, quality, round(angle), distance]
+    return data, len(data)
 
 class LidarProcess(object):
     _port = None    # For serial object
@@ -262,11 +265,18 @@ class LidarProcess(object):
         self._port.flushInput()
         return 1
 
+    # Force clears buffer
+    # Do not use unless you know what you are doing
+    def f_clearBuffer(self):
+        self._port.flushInput()
+        while self._port.in_waiting:
+            self._port.read()
+        return
+
     def stopScan(self):
         self.sendCmd(STOP)
-        time.sleep(.2)
+        time.sleep(.003)
         self.scanning = False
-        self.clearBuffer()
 
     '''
         Starts normal scan
@@ -310,18 +320,11 @@ class LidarProcess(object):
 
     def reset(self):
         self.sendCmd(REST)
-        time.sleep(3)
+        time.sleep(1)
         self.clearBuffer()
         return
 
-    def stopAll(self):
-        self.stopScan()
-        self.stopMotor()
-        self.reset()
-        self.claerBuffer()
-        return
-
-    def getSample(self, leaveHigh = False):
+    def getSample(self):
         if not self.motor_running:
             self.startMotor()
         if not self.scanning:
@@ -333,37 +336,49 @@ class LidarProcess(object):
             raw = self.readResp(SCAN_LEN)
             data = process(raw)
 
-        if not leaveHigh:
-            self.stopScan()
-            self.clearBuffer()
-        return process(raw)
+        return process(raw)[0]
 
     def getScan(self):
         if not self.motor_running:
             self.startMotor()
         if not self.scanning:
             self.startScan()
+            
         scan = []
-        startNode = self.getSample(True)
+
+        startNode = self.getSample()
+        while startNode[1] == 0.0:
+            startNode = self.getSample()
+            
         while not startNode[0]:
-            startNode = self.getSample(True)
+            startNode = self.getSample()
         scan.insert(0, startNode)
-        node = self.getSample(True)
+        node = self.getSample()
         while not node[0]:
             scan.append(node)
-            node = self.getSample(True)
+            node = self.getSample()
 
         return scan
 
-class LidarHandler(threading.Thread):
+# Lidar handler will start with simgle sampling to get warm up
+class LidarHandler(object):
     lidar = None
+    last_sample = []
     last_scan = []
-    def __init__(self, port):
-        threading.Thread.__init__(self)
-        self.lidar = LidarProcess(port)
-        self.start()
 
-    def run(self):
-        while True:
-            if not(self.lidar is None):
-                self.last_scan = self.lidar.getScan()
+    continuous = False
+    
+    def __init__(self, port):
+        self.lidar = LidarProcess(port)
+        last_sample = self.lidar.getSample()
+        return
+
+    # Function will return full 360 scan
+    def getFullScan(self):
+        if self.lidar is None:
+            logger.printErr("\/From getFullScan() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.last_scan = self.lidar.getScan()
+            
+            return self.last_scan
