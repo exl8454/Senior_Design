@@ -363,7 +363,7 @@ class LidarProcess(object):
 # Lidar handler will start with simgle sampling to get warm up
 class LidarHandler(object):
     lidar = None
-    last_sample = []
+    last_sample = None
     last_scan = []
 
     continuous = False
@@ -382,3 +382,12 @@ class LidarHandler(object):
             self.last_scan = self.lidar.getScan()
             
             return self.last_scan
+
+    def getNode(self):
+        if self.lidar is None:
+            logger.printErr("\/From getNode() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.last_sample = self.lidar.getSample()
+
+            return self.last_sample
