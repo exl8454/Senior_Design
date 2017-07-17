@@ -11,7 +11,7 @@ import platform
 
 # Third-party imports
 
-# Custom imports
+# Avocado imports
 import FileHandler as filehandler
 import AvocadoLogger as logger
 from AvocadoLogger import Avocado_Logger as Output
@@ -19,6 +19,7 @@ import StreamHandler as stream
 import ROSCore as roscore
 import Config as config
 from datetime import datetime
+from LidarHandler import LidarHandler as Lidar
 
 # Print start-up to Python shell
 logger.printInfo("Avocado 1.0")
@@ -71,6 +72,8 @@ logger.printInfo("LIDAR port is set to " + portLocation)
 
 # TODO Add start sequence
 # Link Lidar first
+lidar = Lidar(portLocation)
+
 
 '''
 # Starts back-end scripts. Refer to ROSCore.py
