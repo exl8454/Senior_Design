@@ -80,7 +80,7 @@ def fullPoint(nodes):
 
 def singlePoint(node):
     i = 0
-    while i < 360:
+    while i < 365:
         if node[3] == 0:
             pass
         else:
@@ -94,7 +94,7 @@ BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 
 done = False
-lidar = Lidar("COM6")
+lidar = Lidar("COM11")
 time.sleep(1)
 nodes = None
 node = None
