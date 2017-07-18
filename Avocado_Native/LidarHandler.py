@@ -83,6 +83,7 @@ class LidarProcess(object):
     port_timeout = 5# For UART data xmit timeout
     motor_speed = 0
     motor_running = False
+    hardware = 1
     baudrate = 115200
 
     def __init__(self, port, pwm, timeout = 1):
@@ -96,11 +97,10 @@ class LidarProcess(object):
         self.scanning = False
 
         self.openPort()
-        #self.stopMotor()
         time.sleep(1)
-        #self.reset()
-        #self.clearBuffer()
         self.startMotor()
+        info = self.readInfo()
+        self.hardware = hardware['hardware']
     '''
         Returns target port
         Returns: Serial object of port
@@ -135,6 +135,7 @@ class LidarProcess(object):
         except serial.SerialException as ser:
             logger.printErr("\/Encountered error while trying to open port\/")
             logger.printErr(ser)
+            return -1
 
     '''
         Closes serial port
@@ -142,14 +143,20 @@ class LidarProcess(object):
     def closePort(self):
         if self._port is not None:
             self._port.close()
-
         return
 
+    '''
+        Sends single command. This is for none-requesting type
+        commands.
+    '''
     def sendCmd(self, cmd):
         _cmd = SYNC_A + cmd
         self._port.write(_cmd)
         return
 
+    '''
+        Sends single command with parameter.
+    '''
     def sendCmdWithVal(self, cmd, value):
         size = struct.pack('B', len(value))
         pack = SYNC_A + cmd + size + value
@@ -160,6 +167,9 @@ class LidarProcess(object):
         self._port.write(pack)
         return
 
+    '''
+        (A2 Only) Changes motor speed via pwm value
+    '''
     def setSpeed(self, pwm = MOTOR_PWM):
         self.motor_speed = pwm
         #if self.motor_running:
@@ -167,12 +177,19 @@ class LidarProcess(object):
         self.sendCmdWithVal(SPWM, pack)
         return
 
+    '''
+        Starts Motor
+    '''
     def startMotor(self):
         self._port.setDTR(False)
         self.setSpeed(self.motor_speed)
         self.motor_running = True
         return
 
+    '''
+        Stops motor. You can use setSpeed(0) as well to stop motor,
+        but if DTR is LOW, it may cause trouble.
+    '''
     def stopMotor(self):
         self._port.setDTR(True)
         self.setSpeed(0)
@@ -180,6 +197,9 @@ class LidarProcess(object):
         self.motor_running = False
         return
 
+    '''
+        Reads header of response
+    '''
     def readDesc(self):
         desc = self._port.read(DESC_LEN)
         if len(desc) != DESC_LEN:
@@ -192,6 +212,9 @@ class LidarProcess(object):
         is_single = b2i(desc[-2]) == 0
         return [b2i(desc[2]), is_single, b2i(desc[-1])]
 
+    '''
+        Reads actual response from LIDAR
+    '''
     def readResp(self, pack_size):
         while self._port.inWaiting() < pack_size:
             time.sleep(0.001)
@@ -201,6 +224,11 @@ class LidarProcess(object):
             logger.printErr("Byte size does not match")
         return data
 
+    '''
+        Reads information from LIDAR
+        Information contains
+        Model, Firmware, Hardware, and Serial number.
+    '''
     def readInfo(self):
         self.clearBuffer()
         if self._port.inWaiting() > 0:
@@ -234,6 +262,9 @@ class LidarProcess(object):
             }
         return data
 
+    '''
+        Reads connected device's status
+    '''
     def readStat(self):
         self.clearBuffer()
         if self._port.inWaiting() > 0:
@@ -260,6 +291,9 @@ class LidarProcess(object):
         err = (b2i(raw[1]) << 8) + b2i(raw[2])
         return [stat, err]
 
+    '''
+        Clears data buffer
+    '''
     def clearBuffer(self):
         if self.scanning:
             logger.printErr("From clearBuffer")
@@ -276,6 +310,9 @@ class LidarProcess(object):
             self._port.read()
         return
 
+    '''
+        Stops scanning
+    '''
     def stopScan(self):
         self.sendCmd(STOP)
         time.sleep(.003)
@@ -321,12 +358,20 @@ class LidarProcess(object):
         self.scanning = True
         return
 
+    '''
+        Resets device
+        Do not use too often.
+    '''
     def reset(self):
         self.sendCmd(REST)
         time.sleep(1)
         self.clearBuffer()
         return
 
+    '''
+        Returns single sample from LIDAR
+        
+    '''
     def getSample(self):
         if not self.motor_running:
             self.startMotor()
@@ -334,7 +379,7 @@ class LidarProcess(object):
             self.startScan()
 
         raw = self.readResp(SCAN_LEN)
-        data = process(raw)
+        data = process(raw)[0]
         while data[1] == 0.0: # This will dump invalid data
             raw = self.readResp(SCAN_LEN)
             data = process(raw)
