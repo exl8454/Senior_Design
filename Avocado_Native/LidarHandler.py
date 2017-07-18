@@ -74,7 +74,7 @@ def process(raw):
         return [], 0
     angle = ((b2i(raw[1]) >> 1) + (b2i(raw[2]) << 7)) / 64.
     distance = (b2i(raw[3]) + (b2i(raw[4]) << 8)) / 4.
-    data = [new_scan, quality, round(angle), distance]
+    data = [new_scan, quality, angle, distance]
     return data, len(data)
 
 class LidarProcess(object):
