@@ -80,7 +80,7 @@ def fullPoint(nodes):
 
 def singlePoint(node):
     i = 0
-    while i < 365:
+    while i < 360:
         if node[3] == 0:
             pass
         else:
@@ -94,7 +94,7 @@ BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 
 done = False
-lidar = Lidar("COM11")
+lidar = Lidar("COM3", 512)
 time.sleep(1)
 nodes = None
 node = None
@@ -115,10 +115,10 @@ while not done:
     screen.fill(WHITE)
 
     # Single-point continuous display points
-    singlePoint(lidar.getNode())
+    #singlePoint(lidar.getNode())
 
     # Full scan display points
-    #fullPoint(lidar.getFullScan())
+    fullPoint(lidar.getFullScan())
 
     # Full scan display lines
     #fullLine(lidar.getFullScan())
