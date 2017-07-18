@@ -35,8 +35,8 @@ STOP = b'\x40'
 SCAN = b'\x20'
 
 # Speed control constant (A2 only)
-MOTOR_MAX_PWM = 1023
-MOTOR_PWM = 660
+MOTOR_MAX_PWM = 10
+MOTOR_PWM = 10
 SPWM = b'\xF0'
 
 # Data return size
@@ -81,22 +81,26 @@ class LidarProcess(object):
     _port = None    # For serial object
     port = ''       # For port selection
     port_timeout = 5# For UART data xmit timeout
+    motor_speed = 0
+    motor_running = False
     baudrate = 115200
 
-    def __init__(self, port, timeout = 1):
+    def __init__(self, port, pwm, timeout = 1):
         self.port = port
         self.baudrate = 115200
         self.port_timeout = timeout
         
-        self.motor_speed = MOTOR_PWM
+        self.motor_speed = pwm
         self.motor_running = False
 
         self.scanning = False
 
         self.openPort()
-        self.reset()
-        self.clearBuffer()
-        self.stopMotor()
+        #self.stopMotor()
+        time.sleep(1)
+        #self.reset()
+        #self.clearBuffer()
+        self.startMotor()
     '''
         Returns target port
         Returns: Serial object of port
@@ -158,22 +162,21 @@ class LidarProcess(object):
 
     def setSpeed(self, pwm = MOTOR_PWM):
         self.motor_speed = pwm
-        if self.motor_running:
-            pack = struct.pack("<H", self.motor_speed)
-            self.sendCmdWithVal(SPWM, pack)
+        #if self.motor_running:
+        pack = struct.pack("<H", pwm)
+        self.sendCmdWithVal(SPWM, pack)
         return
 
     def startMotor(self):
         self._port.setDTR(False)
-        #self.setSpeed(self.motor_speed)
-        #self.setSpeed(MOTOR_PWM)
+        self.setSpeed(self.motor_speed)
         self.motor_running = True
         return
 
     def stopMotor(self):
         self._port.setDTR(True)
-        #self.setSpeed(0)
-        #time.sleep(0.005)
+        self.setSpeed(0)
+        time.sleep(0.005)
         self.motor_running = False
         return
 
@@ -368,8 +371,8 @@ class LidarHandler(object):
 
     continuous = False
     
-    def __init__(self, port):
-        self.lidar = LidarProcess(port)
+    def __init__(self, port, pwm):
+        self.lidar = LidarProcess(port, pwm)
         last_sample = self.lidar.getSample()
         return
 
