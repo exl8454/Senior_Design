@@ -34,6 +34,9 @@ __UPDATE README.md file IF YOU MADE ANY PROGRESS/CHANGE!__
 
 * July 5th, 2010
 > Python integration for LIDAR
+
+*July 7th, 2017
+> Uploaded 3D Point Cloud MATLAB Code
 ---
 ### When using this repository... 
 * Make sure to add +, -, or * for progress log!  
