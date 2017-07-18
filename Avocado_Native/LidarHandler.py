@@ -52,11 +52,14 @@ SCAN_TYPE = 129
 
 # From Avocado config
 AVOCADO_CONFIG = config.settings
+
+# Hardwares
+hardwares = [0:"A1", 1:"A2", -1:"NONE"]
     
 def b2i(byte):
     return byte if int(sys.version[0]) == 3 else ord(byte)
 
-def process(raw):
+def processSample(raw):
     new_scan = None
     agnle = -1
     distance = -1
@@ -100,7 +103,7 @@ class LidarProcess(object):
         time.sleep(1)
         self.startMotor()
         info = self.readInfo()
-        self.hardware = hardware['hardware']
+        self.hardware = info['hardware']
     '''
         Returns target port
         Returns: Serial object of port
@@ -379,12 +382,12 @@ class LidarProcess(object):
             self.startScan()
 
         raw = self.readResp(SCAN_LEN)
-        data = process(raw)[0]
+        data = processSample(raw)[0]
         while data[1] == 0.0: # This will dump invalid data
             raw = self.readResp(SCAN_LEN)
-            data = process(raw)
+            data = processSample(raw)
 
-        return process(raw)[0]
+        return processSample(raw)[0]
 
     def getScan(self):
         if not self.motor_running:
