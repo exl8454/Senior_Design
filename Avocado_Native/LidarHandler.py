@@ -54,7 +54,7 @@ AVOCADO_CONFIG = config.settings
 
 # Hardwares
 A1 = 0
-A2 = 1
+A2 = 2
     
 def b2i(byte):
     return byte if int(sys.version[0]) == 3 else ord(byte)
@@ -101,9 +101,9 @@ class LidarProcess(object):
 
         self.openPort()
         time.sleep(1)
-        self.startMotor()
         info = self.readInfo()
-        self.hardware = info['hardware']
+        self.hardware = int(info['hardware'])
+        self.startMotor()
     '''
         Returns target port
         Returns: Serial object of port
