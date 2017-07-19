@@ -31,6 +31,7 @@ def printDat(line):
     printTo(line, "DAT")
     return
 
+# Use this for file handling
 class Avocado_Logger(object):
     directory = "AVC_DATA/AVC_DUMP_0.txt"  # File directory
     _file = None     # File object
