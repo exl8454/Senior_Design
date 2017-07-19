@@ -25,11 +25,10 @@ SYNC_B = b'\x5A'
 INFO = b'\x50'
 STAT = b'\x52'
 RATE = b'\x59'
-REST = b'\x40'
 
 # Control constant
-START = b'\x25'
-STOP = b'\x40'
+STOP = b'\x25'
+REST = b'\x40'
 
 # Scan control constant
 SCAN = b'\x20'
@@ -54,7 +53,8 @@ SCAN_TYPE = 129
 AVOCADO_CONFIG = config.settings
 
 # Hardwares
-hardwares = [0:"A1", 1:"A2", -1:"NONE"]
+A1 = 0
+A2 = 1
     
 def b2i(byte):
     return byte if int(sys.version[0]) == 3 else ord(byte)
@@ -78,7 +78,7 @@ def processSample(raw):
     angle = ((b2i(raw[1]) >> 1) + (b2i(raw[2]) << 7)) / 64.
     distance = (b2i(raw[3]) + (b2i(raw[4]) << 8)) / 4.
     data = [new_scan, quality, angle, distance]
-    return data, len(data)
+    return [data, len(data)]
 
 class LidarProcess(object):
     _port = None    # For serial object
@@ -86,7 +86,7 @@ class LidarProcess(object):
     port_timeout = 5# For UART data xmit timeout
     motor_speed = 0
     motor_running = False
-    hardware = 1
+    hardware = -1
     baudrate = 115200
 
     def __init__(self, port, pwm, timeout = 1):
@@ -174,10 +174,12 @@ class LidarProcess(object):
         (A2 Only) Changes motor speed via pwm value
     '''
     def setSpeed(self, pwm = MOTOR_PWM):
-        self.motor_speed = pwm
-        #if self.motor_running:
-        pack = struct.pack("<H", pwm)
-        self.sendCmdWithVal(SPWM, pack)
+        if self.hardware == A2:
+            self.motor_speed = pwm
+            pack = struct.pack("<H", pwm)
+            self.sendCmdWithVal(SPWM, pack)
+        elif self.hardware == A1:
+            logger.printErr("A1 cannot set PWM!")
         return
 
     '''
@@ -185,7 +187,8 @@ class LidarProcess(object):
     '''
     def startMotor(self):
         self._port.setDTR(False)
-        self.setSpeed(self.motor_speed)
+        if self.hardware == A2:
+            self.setSpeed(self.motor_speed)
         self.motor_running = True
         return
 
@@ -195,7 +198,8 @@ class LidarProcess(object):
     '''
     def stopMotor(self):
         self._port.setDTR(True)
-        self.setSpeed(0)
+        if self.hardware == A2:
+            self.setSpeed(0)
         time.sleep(0.005)
         self.motor_running = False
         return
@@ -320,6 +324,8 @@ class LidarProcess(object):
         self.sendCmd(STOP)
         time.sleep(.003)
         self.scanning = False
+        self.clearBuffer()
+        self.f_clearBuffer()
 
     '''
         Starts normal scan
@@ -375,7 +381,7 @@ class LidarProcess(object):
         Returns single sample from LIDAR
         
     '''
-    def getSample(self):
+    def getSample(self, leaveHigh = True):
         if not self.motor_running:
             self.startMotor()
         if not self.scanning:
@@ -383,11 +389,16 @@ class LidarProcess(object):
 
         raw = self.readResp(SCAN_LEN)
         data = processSample(raw)[0]
-        while data[1] == 0.0: # This will dump invalid data
+        while data[2] == 0.0: # This will dump invalid data
             raw = self.readResp(SCAN_LEN)
-            data = processSample(raw)
+            data = processSample(raw)[0]
 
-        return processSample(raw)[0]
+        sample = processSample(raw)[0]
+
+        if not leaveHigh:
+            self.stopScan()
+
+        return sample
 
     def getScan(self):
         if not self.motor_running:
@@ -397,21 +408,23 @@ class LidarProcess(object):
             
         scan = []
 
-        startNode = self.getSample()
+        startNode = self.getSample(True)
         while startNode[1] == 0.0:
-            startNode = self.getSample()
+            startNode = self.getSample(True)
             
         while not startNode[0]:
-            startNode = self.getSample()
+            startNode = self.getSample(True)
         scan.insert(0, startNode)
-        node = self.getSample()
+        node = self.getSample(True)
         while not node[0]:
             scan.append(node)
-            node = self.getSample()
+            node = self.getSample(True)
+
+        self.stopScan()
 
         return scan
 
-# Lidar handler will start with simgle sampling to get warm up
+# Lidar handler will start with single sampling to get warm up
 class LidarHandler(object):
     lidar = None
     last_sample = None
