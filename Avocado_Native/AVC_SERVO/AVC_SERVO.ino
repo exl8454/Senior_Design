@@ -20,6 +20,8 @@ static long lasttime = 0;
 
 static Servo servo;
 
+static int potPin = 0;
+
 void setup()
 {
   Serial.begin(115200); /* Start comm */
@@ -41,6 +43,10 @@ void setup()
 
 void loop()
 {
+  int potVal = analogRead(potPin); /* Read Servo */
+  float angle = ((float) potVal / 1023.0f) * 340.0f;
+  
+  sweep(); /* For moving servo */
   if(Serial.available()) /* Statement only works when RPi sent code */
   {
     Serial.readBytesUntil('\n', serial_buffer, 100); /* Read in max size of 100 */
@@ -66,6 +72,10 @@ void loop()
             token = strtok(NULL, " ");
             setCenter(atoi(token));
           }
+          if(!strcmp(token, "cln")) /* Calibration */
+          {
+             /* TODO Add Calibration function */
+          }
         }
         if(!strcmp(token, "get")) /* RPi requesting data from Arduino */
         {
@@ -74,13 +84,13 @@ void loop()
             getAngle(); /* Return angle */
           if(!strcmp(token, "agr")) /* Raw angle request code */
             getRawAngle();
+          if(!strcmp(token, "pot")) /* Get potentiometer */
+            getPot(angle);
         }
       }
       token = strtok(NULL, " "); /* Check if other command is waiting */
     }
   }
-
-  sweep(); /* For moving servo */
 }
 
 /* Returns current angle of servo
@@ -90,14 +100,22 @@ void loop()
  */
 void getAngle()
 {
-  Serial.print(angle + "\n");
+  Serial.print(angle);
+  Serial.print("\n");
 }
 
 /* Returns actual angle reading from servo.
 */
 void getRawAngle()
 {
-  Serial.print((int)servo.read() + "\n");
+  Serial.print((int)servo.read());
+  Serial.print("\n");
+}
+
+void getPot(float angle)
+{
+  Serial.print(angle);
+  Serial.print("\n");
 }
 
 /* Function for actual servo sweeping.
