@@ -26,7 +26,7 @@ class ArduProcess(threading.Thread):
 # Otherwise, arduino will return -1
 def StartServo(target_port, time_out):
     arduino = serial.Serial(target_port, 115200, timeout = time_out)
-    arduino.write("avc_start\n")
+    arduino.write("avc start\n")
     while not(arduino.in_waiting >= 4):
         pass
     code = arduino.read()
