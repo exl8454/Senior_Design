@@ -15,7 +15,7 @@ int del = 50; /* Delay inbetween servo turn */
 
 char serial_buffer[100];
 char *token;
-char *delim = " $\r\n\0";
+char *delim = " \r\n\0";
 
 long lasttime = 0;
 
@@ -31,7 +31,7 @@ void setup()
 
   /* We will wait for start signal... */
   while(Serial.available() < 1);
-  Serial.readBytesUntil('$', serial_buffer, 100);
+  Serial.readBytesUntil('\r', serial_buffer, 100);
 
   token = strtok(serial_buffer, delim);
   if(!strcmp(token, "avc_start")) /* If start signal was received */
@@ -49,8 +49,6 @@ void setup()
 
 void loop()
 {
-  int potVal = analogRead(potPin); /* Read potentiometer */
-  float angle = ((float) potVal / 1023.0f) * 340.0f;
 
   long currtime = millis();
   if((currtime - lasttime) >= del)
@@ -62,7 +60,7 @@ void loop()
     
   if(Serial.available()) /* Statement only works when RPi sent code */
   {
-    Serial.readBytesUntil('$', serial_buffer, 100); /* Read in max size of 100 */
+    Serial.readBytesUntil('\r', serial_buffer, 100); /* Read in max size of 100 */
 
     /* Split single-line command into code-by-code */
     /* Since delimiter is a whitespace, arduino will look through whitespaces */
@@ -257,6 +255,7 @@ bool test()
  */
 void calibrate()
 {
+  /* Rotate CW until 340 hits */
   
 }
 
