@@ -434,7 +434,7 @@ class LidarHandler(object):
     
     def __init__(self, port, pwm):
         self.lidar = LidarProcess(port, pwm)
-        last_sample = self.lidar.getSample()
+        last_sample = self.lidar.getSample(False)
         return
 
     # Function will return full 360 scan
@@ -447,11 +447,11 @@ class LidarHandler(object):
             
             return self.last_scan
 
-    def getNode(self):
+    def getNode(self, leaveHigh):
         if self.lidar is None:
             logger.printErr("\/From getNode() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
-            self.last_sample = self.lidar.getSample()
+            self.last_sample = self.lidar.getSample(leaveHigh)
 
             return self.last_sample
