@@ -7,79 +7,126 @@
 #include <Servo.h>
 
 /* Variables */
-static int angle = 0; /* Actual angle */
-static int center = 90; /* Center position of servo */
-static int servoPin = 9; /* Pin attached for servo */
-static int angle_amt = 1; /* Angle amount */
-static int del = 0; /* Delay inbetween servo turn */
+int angle = 0; /* Actual angle */
+int center = 90; /* Center position of servo */
+int servoPin = 9; /* Pin attached for servo */
+int angle_amt = 1; /* Angle amount */
+int del = 50; /* Delay inbetween servo turn */
 
-static char serial_buffer[100];
-static char *token;
+char serial_buffer[100];
+char *token;
+char *delim = " $\r\n\0";
 
-static long lasttime = 0;
+long lasttime = 0;
 
-static Servo servo;
+Servo servo;
 
-static int potPin = 0;
+int potPin = 0;
+
+bool isRunning = false;
 
 void setup()
 {
   Serial.begin(115200); /* Start comm */
 
   /* We will wait for start signal... */
-  while(Serial.available() < 3);
-  Serial.readBytesUntil('\n', serial_buffer, 100);
+  while(Serial.available() < 1);
+  Serial.readBytesUntil('$', serial_buffer, 100);
 
-  token = strtok(serial_buffer, "\n");
+  token = strtok(serial_buffer, delim);
   if(!strcmp(token, "avc_start")) /* If start signal was received */
   {
-    if(test()) /* Test servo */
-      Serial.print("ack\n"); /* Send acknowledge code back */
-    else
-      Serial.print("err 000\n"); /* Send error code back if error found */
     servo.attach(servoPin); /* Attach servo to default pin */
+    if(test()) /* Test servo */
+    {
+      Serial.println("ack"); /* Send acknowledge code back */
+      isRunning = true;
+    }
+    else
+      Serial.println("err 000"); /* Send error code back if error found */
   }
 }
 
 void loop()
 {
-  int potVal = analogRead(potPin); /* Read Servo */
+  int potVal = analogRead(potPin); /* Read potentiometer */
   float angle = ((float) potVal / 1023.0f) * 340.0f;
-  
-  sweep(); /* For moving servo */
+
+  long currtime = millis();
+  if((currtime - lasttime) >= del)
+  {
+    if(isRunning)
+      sweep();
+    lasttime = currtime;
+  }
+    
   if(Serial.available()) /* Statement only works when RPi sent code */
   {
-    Serial.readBytesUntil('\n', serial_buffer, 100); /* Read in max size of 100 */
+    Serial.readBytesUntil('$', serial_buffer, 100); /* Read in max size of 100 */
 
     /* Split single-line command into code-by-code */
     /* Since delimiter is a whitespace, arduino will look through whitespaces */
-    token = strtok(serial_buffer, " ");
+    token = strtok(serial_buffer, delim);
     while(token != NULL)
     {
       if(!strcmp(token, "avc")) /* Proper start signal */
       {
-        token = strtok(NULL, " "); /* Read next */
-        if(!strcmp(token, "set")) /* RPi sending config to Arduino */
+        token = strtok(NULL, delim); /* Read next */
+        if(!strcmp(token, "stp"))
         {
-          token = strtok(NULL, " "); /* Read next */
+          isRunning = false;
+          toCenter();
+          Serial.println("ack");
+        }
+        else if(!strcmp(token, "swp"))
+        {
+          angle_amt = 1; /* Reset direction */
+          isRunning = true;
+          Serial.println("ack");
+        }
+        else if(!strcmp(token, "gto"))
+        {
+          token = strtok(NULL, delim);
+          if(!strcmp(token, "ctr"))
+          {
+            isRunning = false;
+            toCenter();
+          }
+          else if(!strcmp(token, "str"))
+          {
+            /* Start */
+          }
+          else if(!strcmp(token, "end"))
+          {
+            /* End */
+          }
+          else
+          {
+            isRunning = false;
+            toAngle(atoi(token));
+          }
+        }
+        else if(!strcmp(token, "set")) /* RPi sending config to Arduino */
+        {
+          token = strtok(NULL, delim); /* Read next */
           if(!strcmp(token, "del")) /* If next code is delay */
           {
-            token = strtok(NULL, " "); /* Read next */
+            token = strtok(NULL, delim); /* Read next */
             del = atoi(token); /* Convert next code to int to set delat */
+            Serial.println(del);
           }
           if(!strcmp(token, "ctr"))
           {
-            token = strtok(NULL, " ");
-            setCenter(atoi(token));
+            setCenter();
           }
-          if(!strcmp(token, "cln")) /* Calibration */
+          if(!strcmp(token, "clb")) /* Calibration */
           {
              /* TODO Add Calibration function */
           }
         }
-        if(!strcmp(token, "get")) /* RPi requesting data from Arduino */
+        else if(!strcmp(token, "get")) /* RPi requesting data from Arduino */
         {
-          token = strtok(NULL, " "); /* Read next */
+          token = strtok(NULL, delim); /* Read next */
           if(!strcmp(token, "agl")) /* Angle request code */
             getAngle(); /* Return angle */
           if(!strcmp(token, "agr")) /* Raw angle request code */
@@ -88,9 +135,22 @@ void loop()
             getPot(angle);
         }
       }
-      token = strtok(NULL, " "); /* Check if other command is waiting */
+      token = strtok(NULL, delim);
     }
   }
+}
+
+/* Function for actual servo sweeping.
+*  Function checks delay time between servo move.
+ * Deflection angle can be changed from Avocado calls.
+*/
+void sweep()
+{
+  angle += angle_amt;
+  if(angle > 180 || angle < 0)
+    angle_amt = -angle_amt;
+
+  servo.write(angle);
 }
 
 /* Returns current angle of servo
@@ -100,67 +160,39 @@ void loop()
  */
 void getAngle()
 {
-  Serial.print(angle);
-  Serial.print("\n");
+  Serial.println(angle);
 }
 
 /* Returns actual angle reading from servo.
 */
 void getRawAngle()
 {
-  Serial.print((int)servo.read());
-  Serial.print("\n");
+  Serial.println((int)servo.read());
 }
 
+/* Returns attached potentiometer's reading
+ */
 void getPot(float angle)
 {
-  Serial.print(angle);
-  Serial.print("\n");
+  Serial.println(angle);
 }
 
-/* Function for actual servo sweeping.
-*  Function checks delay time between servo move.
- * Deflection angle can be changed from Avocado calls.
-*/
-void sweep()
-{
-  long currtime = millis();
-  if((currtime - lasttime) >= del)
-  {
-    angle += angle_amt;
-    if(angle >= 180 || angle <= 0)
-      angle_amt = -angle_amt;
-
-    servo.write(angle);
-    lasttime = currtime;
-  }
-}
-
-/* Tests servo.
-*  Servo moves from 0 to 180. While servo is moving,
- * Arduino will get servo angle value to check if given
-*  angle value equals received angle value.
+/* Sets servo agle to center
+*  Center angle can be changed via setCenter() function.
  */
-bool test()
+void toCenter()
 {
-  for(angle = 0; angle <= 180; angle++)
-  {
-    servo.write(angle);
-    int _angle;
-    _angle = servo.read();
-    if(angle != _angle)
-      return false;
-  }
-  for(angle = 180; angle >= 0; angle--)
-  {
-    servo.write(angle);
-    int _angle;
-    _angle = servo.read();
-    if(angle != _angle)
-      return false;
-  }
+  angle = center;
+  servo.write(angle);
+}
 
-  return true;
+/* Moves servo to target angle
+*  angle must be sent as integer
+ */
+void toAngle(int _angle)
+{
+  angle = _angle;
+  servo.write(angle);
 }
 
 /* Changes pin attached to for servo.
@@ -184,8 +216,47 @@ void changePin(int newPin)
 /* Sets center point of Arduino
 *  For later use probably.
  */
-void setCenter(int _center)
+void setCenter()
 {
-  center = _center;
+  center = servo.read();
+}
+
+/* Tests servo.
+*  Servo moves from 0 to 180. While servo is moving,
+ * Arduino will get servo angle value to check if given
+*  angle value equals received angle value.
+ */
+bool test()
+{
+  for(angle = 0; angle <= 180; angle++)
+  {
+    servo.write(angle);
+    int _angle;
+    delay(del);
+    _angle = servo.read();
+    if(angle != _angle)
+      return false;
+  }
+  for(angle = 180; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    int _angle;
+    delay(del);
+    _angle = servo.read();
+    if(angle != _angle)
+      return false;
+  }
+
+  return true;
+}
+
+/* For continuous rotation servo! */
+
+/* Calibrates servo with potentiometer
+*  Use only with full-cycle servo
+ */
+void calibrate()
+{
+  
 }
 
