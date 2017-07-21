@@ -72,6 +72,14 @@ def SetServoSpeed(delay_in_milli):
         stream.PrintTo("No arduino detected", "ERR")
         return -1
 
+# Returns potentiometer value
+def getPotentiometer():
+    global arduino
+    if not (arduino is None):
+        cmd = "avc get pot\r"
+        arduino.write(cmd.encode(encoding = 'ascii'))
+        value = int(arduino.readline())
+
 # Requests servo's current angle then saves to a variable
 def GetServoAngle():
     global arduino
