@@ -15,7 +15,7 @@ int del = 50; /* Delay inbetween servo turn */
 
 char serial_buffer[100];
 char *token;
-char *delim = " \n";
+char *delim = " $\r\n\0";
 
 long lasttime = 0;
 
@@ -30,20 +30,20 @@ void setup()
   Serial.begin(115200); /* Start comm */
 
   /* We will wait for start signal... */
-  while(Serial.available() < 3);
-  Serial.readBytesUntil('\n', serial_buffer, 100);
+  while(Serial.available() < 1);
+  Serial.readBytesUntil('$', serial_buffer, 100);
 
-  token = strtok(serial_buffer, "\n");
-  if(!strcmp(token, "avc start")) /* If start signal was received */
+  token = strtok(serial_buffer, delim);
+  if(!strcmp(token, "avc_start")) /* If start signal was received */
   {
     servo.attach(servoPin); /* Attach servo to default pin */
     if(test()) /* Test servo */
     {
-      Serial.print("ack\n"); /* Send acknowledge code back */
+      Serial.println("ack"); /* Send acknowledge code back */
       isRunning = true;
     }
     else
-      Serial.print("err 000\n"); /* Send error code back if error found */
+      Serial.println("err 000"); /* Send error code back if error found */
   }
 }
 
@@ -62,7 +62,7 @@ void loop()
     
   if(Serial.available()) /* Statement only works when RPi sent code */
   {
-    Serial.readBytesUntil('\n', serial_buffer, 100); /* Read in max size of 100 */
+    Serial.readBytesUntil('$', serial_buffer, 100); /* Read in max size of 100 */
 
     /* Split single-line command into code-by-code */
     /* Since delimiter is a whitespace, arduino will look through whitespaces */
@@ -76,10 +76,35 @@ void loop()
         {
           isRunning = false;
           toCenter();
+          Serial.println("ack");
         }
         else if(!strcmp(token, "swp"))
         {
+          angle_amt = 1; /* Reset direction */
           isRunning = true;
+          Serial.println("ack");
+        }
+        else if(!strcmp(token, "gto"))
+        {
+          token = strtok(NULL, delim);
+          if(!strcmp(token, "ctr"))
+          {
+            isRunning = false;
+            toCenter();
+          }
+          else if(!strcmp(token, "str"))
+          {
+            /* Start */
+          }
+          else if(!strcmp(token, "end"))
+          {
+            /* End */
+          }
+          else
+          {
+            isRunning = false;
+            toAngle(atoi(token));
+          }
         }
         else if(!strcmp(token, "set")) /* RPi sending config to Arduino */
         {
@@ -88,11 +113,11 @@ void loop()
           {
             token = strtok(NULL, delim); /* Read next */
             del = atoi(token); /* Convert next code to int to set delat */
+            Serial.println(del);
           }
           if(!strcmp(token, "ctr"))
           {
-            token = strtok(NULL, delim);
-            setCenter(atoi(token));
+            setCenter();
           }
           if(!strcmp(token, "clb")) /* Calibration */
           {
@@ -112,7 +137,6 @@ void loop()
       }
       token = strtok(NULL, delim);
     }
-    Serial.flush();
   }
 }
 
@@ -146,43 +170,29 @@ void getRawAngle()
   Serial.println((int)servo.read());
 }
 
+/* Returns attached potentiometer's reading
+ */
 void getPot(float angle)
 {
   Serial.println(angle);
 }
 
+/* Sets servo agle to center
+*  Center angle can be changed via setCenter() function.
+ */
 void toCenter()
 {
-  servo.write(center);
+  angle = center;
+  servo.write(angle);
 }
 
-/* Tests servo.
-*  Servo moves from 0 to 180. While servo is moving,
- * Arduino will get servo angle value to check if given
-*  angle value equals received angle value.
+/* Moves servo to target angle
+*  angle must be sent as integer
  */
-bool test()
+void toAngle(int _angle)
 {
-  for(angle = 0; angle <= 180; angle++)
-  {
-    servo.write(angle);
-    int _angle;
-    delay(5);
-    _angle = servo.read();
-    if(angle != _angle)
-      return false;
-  }
-  for(angle = 180; angle >= 0; angle--)
-  {
-    servo.write(angle);
-    int _angle;
-    delay(5);
-    _angle = servo.read();
-    if(angle != _angle)
-      return false;
-  }
-
-  return true;
+  angle = _angle;
+  servo.write(angle);
 }
 
 /* Changes pin attached to for servo.
@@ -206,8 +216,47 @@ void changePin(int newPin)
 /* Sets center point of Arduino
 *  For later use probably.
  */
-void setCenter(int _center)
+void setCenter()
 {
-  center = _center;
+  center = servo.read();
+}
+
+/* Tests servo.
+*  Servo moves from 0 to 180. While servo is moving,
+ * Arduino will get servo angle value to check if given
+*  angle value equals received angle value.
+ */
+bool test()
+{
+  for(angle = 0; angle <= 180; angle++)
+  {
+    servo.write(angle);
+    int _angle;
+    delay(del);
+    _angle = servo.read();
+    if(angle != _angle)
+      return false;
+  }
+  for(angle = 180; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    int _angle;
+    delay(del);
+    _angle = servo.read();
+    if(angle != _angle)
+      return false;
+  }
+
+  return true;
+}
+
+/* For continuous rotation servo! */
+
+/* Calibrates servo with potentiometer
+*  Use only with full-cycle servo
+ */
+void calibrate()
+{
+  
 }
 
