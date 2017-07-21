@@ -80,7 +80,7 @@ def fullPoint(nodes):
 
 def singlePoint(node):
     i = 0
-    while i < 365:
+    while i < 540:
         if node[3] == 0:
             pass
         else:
