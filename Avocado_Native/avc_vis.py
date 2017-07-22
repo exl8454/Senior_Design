@@ -96,6 +96,8 @@ class AvcVis(object):
             else:
                 center = self.getRect(node[2], node[3])
                 pygame.draw.rect(self.screen, self.intensity(node, 35), [center[0] - 2, center[1] + 2, 2, 2])
+
+                # Orientation
                 if 91 >= node[2] and node[2] >= 89:
                     pygame.draw.line(self.screen, self.GREEN, [center[0], center[1]], [300, 300])
                 if 181 >= node[2] and node[2] >= 179:
