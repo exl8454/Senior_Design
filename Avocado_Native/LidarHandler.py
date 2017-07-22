@@ -84,6 +84,7 @@ class LidarProcess(object):
     _port = None    # For serial object
     port = ''       # For port selection
     port_timeout = 5# For UART data xmit timeout
+    port_opened = False
     motor_speed = 0
     motor_running = False
     hardware = -1
@@ -109,15 +110,22 @@ class LidarProcess(object):
         Returns: Serial object of port
         Returns: None if target port is not set
     '''
-    def get_port():
+    def get_port(self):
         return _port
 
     '''
         Returns target port name
         Returns: String for port name
     '''
-    def getPort():
+    def getPort(self):
         return port
+
+    def start(self):
+        self.openPort()
+        time.sleep(1)
+        info = self.readInfo()
+        self.hardware = int(info['hardware'])
+        self.startMotor()
 
     '''
         Opens serial port with preset configurations.
@@ -127,6 +135,7 @@ class LidarProcess(object):
     def openPort(self):
         if self._port is not None:
             self._port.close()
+            
         if self.port is None:
             logger.printErr("Target port is not set!")
             return -1
@@ -135,6 +144,7 @@ class LidarProcess(object):
                 self.port, self.baudrate,\
                 parity = serial.PARITY_NONE, stopbits = serial.STOPBITS_ONE,\
                 timeout = self.port_timeout)
+            self.port_opened = True
         except serial.SerialException as ser:
             logger.printErr("\/Encountered error while trying to open port\/")
             logger.printErr(ser)
@@ -146,6 +156,7 @@ class LidarProcess(object):
     def closePort(self):
         if self._port is not None:
             self._port.close()
+            self._port = None
         return
 
     '''
@@ -379,7 +390,8 @@ class LidarProcess(object):
 
     '''
         Returns single sample from LIDAR
-        
+        if leaveHigh parameter is set to True,
+        LIDAR will remain in scan mode.
     '''
     def getSample(self, leaveHigh = True):
         if not self.motor_running:
@@ -447,6 +459,7 @@ class LidarHandler(object):
             
             return self.last_scan
 
+    # Function will return single sample
     def getNode(self, leaveHigh):
         if self.lidar is None:
             logger.printErr("\/From getNode() in class LidarHandler\/")
@@ -455,3 +468,36 @@ class LidarHandler(object):
             self.last_sample = self.lidar.getSample(leaveHigh)
 
             return self.last_sample
+
+    def stop(self):
+        if self.lidar is None:
+            logger.printErr("\/From stop() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.lidar.stopScan()
+            self.lidar.reset()
+            self.lidar.stopMotor()
+            return
+
+    def start(self):
+        if self.lidar is None:
+            logger.printErr("\/From start() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            if self.lidar.
+            self.last_scan = self.lidar.getScan(False)
+            return
+
+    def open(self):
+        if self.lidar is None:
+            logger.printErr("\/From open() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.lidar.openPort()
+            
+    def close(self):
+        if self.lidar is None:
+            logger.printErr("\/From close() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.lidar.closePort()
