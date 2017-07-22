@@ -17,6 +17,10 @@ int servoPin = 9; /* Pin attached for servo */
 int angle_amt = 1; /* Angle amount */
 int del = 50; /* Delay inbetween servo turn */
 
+int offset = 90; /* Potentiometer's ACTUAL center */
+int hi = 180; /* High side of potentiometer */
+int lo = 0; /* Low side of potentiometer */
+
 char serial_buffer[100];
 char *token;
 char *delim = " \r\n\0";
@@ -45,7 +49,9 @@ void setup()
     if(test()) /* Test servo */
     {
       Serial.println("ack"); /* Send acknowledge code back */
-      isRunning = true;
+      calibrate();
+      toCenter();
+      isRunning = false;
     }
     else
       Serial.println(ERR_SERVO_NO_MATCH); /* Send error code back if error found */
@@ -131,12 +137,11 @@ void loop()
             del = atoi(token); /* Convert next code to int to set delat */
             Serial.println(del);
           }
-          if(!strcmp(token, "ctr"))
+          if(!strcmp(token, "ctr")) /* Manual setting for center */
           {
             if(!isRunning)
             {
               setCenter();
-              Serial.println("ack");
             }
             else
             {
@@ -224,11 +229,13 @@ void changePin(int newPin)
 }
 
 /* Sets center point of Arduino
-*  For later use probably.
+*  Arduino reads potentiometer value to set center.
  */
 void setCenter()
 {
-  center = servo.read();
+  center = (int) readPot();
+  Serial.print(center);
+  Serial.println(" ack");
 }
 
 /* Returns current angle of servo
@@ -303,7 +310,7 @@ bool test()
   {
     servo.write(angle);
     int _angle;
-    delay(5);
+    delay(10);
     _angle = servo.read();
     if(angle != _angle)
       return false;
@@ -312,7 +319,7 @@ bool test()
   {
     servo.write(angle);
     int _angle;
-    delay(5);
+    delay(10);
     _angle = servo.read();
     if(angle != _angle)
       return false;
@@ -331,14 +338,37 @@ bool test()
 */
 void calibrate()
 {
+  /* Rotate servo to 90 */
+  servo.write(90);
+  /* Settle down before calibration */
+  delay(1000);
+  
   /* Rotate servo to 0 */
-  /* Wait for milli to settle down */
+  servo.write(0);
+  /* Wait for some milli to settle down */
+  delay(1000);
   /* Read pot and set low side */
+  float _hi = readPot();
+
+  delay(1000);
   
   /* Rotate servo to 180 */
-  /* Wait for milli to settle down */
+  servo.write(180);
+  /* Wait for some milli to settle down */
+  delay(1000);
   /* Read pot and set high side */
+  float _lo = readPot();
 
+  delay(1000);
+  
   /* Calculate mid-point and save as offset value */
+  hi = (int) _hi;
+  lo = (int) _lo;
+  float _offset = ((hi + lo) / 2);
+  offset = (int) _offset;
+  Serial.print(hi); Serial.print(" ");
+  Serial.print(offset); Serial.print(" ");
+  Serial.print(lo); Serial.print(" ");
+  Serial.println("ack");
 }
 
