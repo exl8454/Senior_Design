@@ -179,6 +179,10 @@ void sweep()
   angle += angle_amt;
   if(angle > 180 || angle < 0)
     angle_amt = -angle_amt;
+  if(angle == -1)
+    angle = 0;
+  if(angle == 181)
+    angle = 180;
 
   servo.write(angle);
 }
@@ -257,6 +261,9 @@ void getPot()
   Serial.println(" ack");
 }
 
+/* Reads potentiometer, but does not send through
+*  Serial port.
+ */
 float readPot()
 {
   int analog = analogRead(0);
@@ -265,11 +272,17 @@ float readPot()
   return angle;
 }
 
+/* Reads servo angle, but does not send through
+*  Serial port.
+ */
 int readRawAngle()
 {
   return (int) servo.read();
 }
 
+/* Reads current angle setting, but does not send
+*  through Serial port.
+ */
 int readAngle()
 {
   return angle;
@@ -278,7 +291,11 @@ int readAngle()
 /* Tests servo.
 *  Servo moves from 0 to 180. While servo is moving,
  * Arduino will get servo angle value to check if given
-*  angle value equals received angle value.
+*  angle value equals to received angle value.
+ * Note that this function does not check integration
+*  between servo and potentiometer.
+ * Use calibrate() function for servo-potentiometer
+*  calibration.
  */
 bool test()
 {
@@ -304,14 +321,24 @@ bool test()
   return true;
 }
 
-/* For continuous rotation servo! */
-
-/* Calibrates servo with potentiometer
-*  Use only with full-cycle servo
- */
+/* Calibrates servo with potentiometer.
+*  Standard servo will rotate to maximum and
+ * minimum bound and checks with potentiometer.
+*  Potentiometer angle then be off-set with
+ * measured value.
+*  Note that offset value is floored to nearest
+ * integer, so measurement error may happen.
+*/
 void calibrate()
 {
-  /* Rotate CW until 340 hits */
+  /* Rotate servo to 0 */
+  /* Wait for milli to settle down */
+  /* Read pot and set low side */
   
+  /* Rotate servo to 180 */
+  /* Wait for milli to settle down */
+  /* Read pot and set high side */
+
+  /* Calculate mid-point and save as offset value */
 }
 
