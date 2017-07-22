@@ -21,6 +21,10 @@ int offset = 90; /* Potentiometer's ACTUAL center */
 int hi = 180; /* High side of potentiometer */
 int lo = 0; /* Low side of potentiometer */
 
+float LPF_Beta = 0.25; /* For Low-Pass Filter */
+float output = 0;
+float _output = 0;
+
 char serial_buffer[100];
 char *token;
 char *delim = " \r\n\0";
@@ -46,12 +50,12 @@ void setup()
   if(!strcmp(token, "avc_start")) /* If start signal was received */
   {
     servo.attach(servoPin); /* Attach servo to default pin */
+    angle = servo.read();
     if(test()) /* Test servo */
     {
-      Serial.println("ack"); /* Send acknowledge code back */
-      calibrate();
-      toCenter();
+      sweepTo(90, 50);
       isRunning = false;
+      Serial.println("ack"); /* Send acknowledge code back */
     }
     else
       Serial.println(ERR_SERVO_NO_MATCH); /* Send error code back if error found */
@@ -128,6 +132,35 @@ void loop()
           Serial.print(angle);
           Serial.println(" ack");
         }
+        else if(!strcmp(token, "clb")) /* Calibration */
+        {
+          if(!isRunning)
+          {
+            token = strtok(NULL, delim);
+            if(!strcmp(token, "tpa"))
+              calibrate_a();
+            else if(!strcmp(token, "tpb"))
+              calibrate_b();
+            else if(!strcmp(token, "tpc"))
+              calibrate_c();
+            else if(!strcmp(token, "tpd"))
+              calibrate_d();
+            else calibrate_a();
+
+            sweepPot(offset, 100);
+          }
+          else
+            Serial.println(ERR_SERVO_RUNNING);
+        }
+        else if(!strcmp(token, "sdn")) /* Shutdown Sequence */
+        {
+          sweepTo(90, 50);
+          while(Serial.available())
+            Serial.read();
+
+          servo.detach();
+          Serial.end();
+        }
         else if(!strcmp(token, "set")) /* RPi sending config to Arduino */
         {
           token = strtok(NULL, delim); /* Read next */
@@ -135,22 +168,15 @@ void loop()
           {
             token = strtok(NULL, delim); /* Read next */
             del = atoi(token); /* Convert next code to int to set delat */
-            Serial.println(del);
+            Serial.print(del);
+            Serial.println(" ack");
           }
           if(!strcmp(token, "ctr")) /* Manual setting for center */
           {
             if(!isRunning)
-            {
               setCenter();
-            }
             else
-            {
               Serial.println(ERR_SERVO_RUNNING);
-            }
-          }
-          if(!strcmp(token, "clb")) /* Calibration */
-          {
-             /* TODO Add Calibration function */
           }
         }
         else if(!strcmp(token, "get")) /* RPi requesting data from Arduino */
@@ -190,6 +216,7 @@ void sweep()
     angle = 180;
 
   servo.write(angle);
+  readPot();
 }
 
 /* Sets servo agle to center
@@ -197,8 +224,7 @@ void sweep()
  */
 void toCenter()
 {
-  angle = center;
-  servo.write(angle);
+  sweepTo(center, del);
 }
 
 /* Moves servo to target angle
@@ -206,8 +232,49 @@ void toCenter()
  */
 void toAngle(int _angle)
 {
-  angle = _angle;
-  servo.write(angle);
+  sweepTo(_angle, del);
+}
+
+/* Moves servo to target angle using sweep method.
+*  Use this function to carefully move servo.
+ */
+void sweepTo(int _angle, int interval)
+{
+  if(angle > _angle)
+    angle_amt = -1;
+  else if(angle < _angle)
+    angle_amt = 1;
+
+  while(angle != _angle)
+  {
+    angle += angle_amt;
+    servo.write(angle);
+    readPot();
+    delay(interval);
+  }
+}
+
+/* Moves servo to target potentiometer angle.
+ *  
+ */
+void sweepPot(int pot_target, int interval)
+{
+  int pot_current = (int)readPot();
+  
+  if(pot_current > pot_target)
+    angle_amt = 1;
+  if(pot_current < pot_target)
+    angle_amt = -1;
+
+  while(pot_current != pot_target && angle <= 180 && angle >= 0)
+  {
+    angle += angle_amt;
+    servo.write(angle);
+    pot_current = (int)readPot();
+    delay(interval);
+  }
+
+  sweepTo(90, 100);
 }
 
 /* Changes pin attached to for servo.
@@ -233,8 +300,8 @@ void changePin(int newPin)
  */
 void setCenter()
 {
-  center = (int) readPot();
-  Serial.print(center);
+  offset = (int) readPot();
+  Serial.print(offset);
   Serial.println(" ack");
 }
 
@@ -263,8 +330,11 @@ void getPot()
 {
   int analog = analogRead(0);
   float angle = ((float) analog / 1023.0f) * 340.0f;
+
+  _output = output;
+  output = (LPF_Beta * angle) + ((1 - LPF_Beta) * _output);
   
-  Serial.print(angle);
+  Serial.print(output);
   Serial.println(" ack");
 }
 
@@ -276,7 +346,10 @@ float readPot()
   int analog = analogRead(0);
   float angle = ((float) analog / 1023.0f) * 340.0f;
 
-  return angle;
+  _output = output;
+  output = (LPF_Beta * angle) + ((1 - LPF_Beta) * _output);
+
+  return output;
 }
 
 /* Reads servo angle, but does not send through
@@ -306,20 +379,24 @@ int readAngle()
  */
 bool test()
 {
+  sweepTo(0, 50);
+  
   for(angle = 0; angle <= 180; angle++)
   {
+    readPot();
     servo.write(angle);
     int _angle;
-    delay(10);
+    delay(25);
     _angle = servo.read();
     if(angle != _angle)
       return false;
   }
   for(angle = 180; angle >= 0; angle--)
   {
+    readPot();
     servo.write(angle);
     int _angle;
-    delay(10);
+    delay(25);
     _angle = servo.read();
     if(angle != _angle)
       return false;
@@ -336,39 +413,250 @@ bool test()
 *  Note that offset value is floored to nearest
  * integer, so measurement error may happen.
 */
-void calibrate()
-{
-  /* Rotate servo to 90 */
-  servo.write(90);
-  /* Settle down before calibration */
-  delay(1000);
-  
-  /* Rotate servo to 0 */
-  servo.write(0);
-  /* Wait for some milli to settle down */
-  delay(1000);
-  /* Read pot and set low side */
-  float _hi = readPot();
 
+/* Single sweep, fast method
+*  Servo starts at 0 degree, then sweeps to 180 degree at
+ * one-half interval. Potentiometer is read low, then starts
+*  sweeping to far end, up to 0 degrees. Potentiometer is
+ * read high, then calculates center offset by taking linear
+*  midpoint method.
+ */
+void calibrate_a()
+{
+  sweepTo(0, 50);
   delay(1000);
-  
-  /* Rotate servo to 180 */
-  servo.write(180);
-  /* Wait for some milli to settle down */
+
+  for(angle = 0; angle <= 180; angle++)
+  {
+    servo.write(angle);
+    delay(25);
+    readPot();
+  }
   delay(1000);
-  /* Read pot and set high side */
   float _lo = readPot();
 
+  for(angle = 180; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    delay(25);
+    readPot();
+  }
   delay(1000);
+  float _hi = readPot();
   
-  /* Calculate mid-point and save as offset value */
   hi = (int) _hi;
   lo = (int) _lo;
-  float _offset = ((hi + lo) / 2);
+  float _offset = ((_hi + _lo) / 2);
   offset = (int) _offset;
   Serial.print(hi); Serial.print(" ");
   Serial.print(offset); Serial.print(" ");
   Serial.print(lo); Serial.print(" ");
   Serial.println("ack");
+
+  delay(1000);
+}
+
+/* Single Sweep, angle-by-angle method.
+*  Servo starts at 90 degrees, then sweeps to 180 degrees
+ * at much slower rate. Each time servo is moved by 1 degree,
+*  potentiometer value is measured, then saved at target
+ * variables.
+*  Once sweeping is completed, center offset is caculated by
+ * linear midpoint method.
+*/
+void calibrate_b()
+{
+  float _lo = 0;
+  float _offset = 90;
+  float _hi = 180;
+  
+  sweepTo(90, 50);
+  delay(1000);
+  while(angle <= 180)
+  {
+    angle++;
+    servo.write(angle);
+    delay(200);
+    _lo = readPot();
+  }
+  delay(1000);
+  while(angle != 90)
+  {
+    angle--;
+    servo.write(angle);
+    delay(200);
+    readPot();
+  }
+  delay(1000);
+  while(angle >= 0)
+  {
+    angle--;
+    servo.write(angle);
+    delay(200);
+    _hi = readPot();
+  }
+  delay(1000);
+
+  hi = (int) _hi;
+  lo = (int) _lo;
+  _offset = ((_hi + _lo) / 2);
+  offset = (int) _offset;
+  Serial.print(hi); Serial.print(" ");
+  Serial.print(offset); Serial.print(" ");
+  Serial.print(lo); Serial.print(" ");
+  Serial.println("ack");
+  
+  delay(1000);
+}
+
+/* Near-Edge refining method.
+*  Servo starts at 0 degree, then moves towards 180 degrees.
+ * 10 degrees before approaching, servo slows down, and samples
+*  potentiometer at much faster rate. Potentiometer value is
+ * replaced if new measurement is lower than previous one.
+*  Servo moves towards 0 degree, at normal speed.
+ * 10 degrees before approaching, servo slows down, and samples
+*  potentiometer at much faster rate. Potentiometer value is
+ * replaced if new measurement is higher than previous one.
+*  Center offset is calculated by linear midpoint method.
+ */
+void calibrate_c()
+{
+  float _lo = 340;
+  float _offset = 90;
+  float _hi = 0;
+
+  float __lo = 0;
+  float __hi = 0;
+
+  int i = 0;
+  
+  sweepTo(0, 25);
+  for(angle = 0; angle <= 170; angle++)
+  {
+    servo.write(angle);
+    delay(50);
+    __lo = readPot();
+    if(__lo < _lo)
+      _lo = __lo;
+  }
+  for(angle = 170; angle <= 180; angle++)
+  {
+    servo.write(angle);
+    for(i = 0; i < 500; i++)
+    {
+      __lo = readPot();
+      if(__lo < _lo)
+        _lo = __lo;
+      delay(1);
+    }
+  }
+
+  delay(1000);
+
+  for(angle = 180; angle >= 10; angle--)
+  {
+    servo.write(angle);
+    delay(50);
+    __hi = readPot();
+    if(__hi > _hi)
+      _hi = __hi;
+  }
+  for(angle = 10; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    for(i = 0; i < 500; i++)
+    {
+      __hi = readPot();
+      if(__hi > _hi)
+        _hi = __hi;
+      delay(1);
+    }
+  }
+
+  delay(1000);
+
+  hi = (int)_hi;
+  offset = (int)((_lo + _hi) / 2);
+  lo = (int)_lo;
+  Serial.print(hi); Serial.print(" ");
+  Serial.print(offset); Serial.print(" ");
+  Serial.print(lo); Serial.print(" ");
+  Serial.println("ack");
+}
+
+/* Manual Method
+*  Servo sweeps to 180 degrees, then detaches self, so user
+ * can move shaft with hand. Once each position is manually
+*  moved, potentiometer value is read and stored.
+ */
+void calibrate_d()
+{
+  sweepTo(180, 50);
+
+  delay(1000);
+  servo.detach();
+  Serial.println("rdy ack");
+  while(Serial.available() < 1)
+    readPot();
+
+  float _lo = readPot();
+  servo.attach(servoPin);
+  angle = servo.read();
+  sweepTo(90, 50);
+  while(Serial.available())
+    Serial.read();
+
+  delay(1000);
+  servo.detach();
+  Serial.println("rdy ack");
+  while(Serial.available() < 1)
+    readPot();
+
+  float _offset = readPot();
+  servo.attach(servoPin);
+  angle = servo.read();
+  sweepTo(0, 50);
+  while(Serial.available())
+    Serial.read();
+
+  delay(1000);
+  servo.detach();
+  Serial.println("rdy ack");
+  while(Serial.available() < 1)
+    readPot();
+
+  float _hi = readPot();
+  servo.attach(servoPin);
+  angle = servo.read();
+  while(Serial.available())
+    Serial.read();
+
+  hi = (int)_hi;
+  offset = (int)_offset;
+  lo = (int)_lo;
+  Serial.print(hi); Serial.print(" ");
+  Serial.print(offset); Serial.print(" ");
+  Serial.print(lo); Serial.print(" ");
+  Serial.println("ack");
+
+  delay(1000);
+}
+
+void smoothPot()
+{
+  sweepTo(0, 50);
+  for(angle = 0; angle <= 180; angle++)
+  {
+    servo.write(angle);
+    readPot();
+    delay(50);
+  }
+  for(angle = 180; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    readPot();
+    delay(50);
+  }
 }
 
