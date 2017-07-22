@@ -6,6 +6,10 @@
 /* Headers */
 #include <Servo.h>
 
+/* Defines */
+#define ERR_SERVO_NO_MATCH "err 000"
+#define ERR_SERVO_RUNNING "err 001"
+
 /* Variables */
 int angle = 0; /* Actual angle */
 int center = 90; /* Center position of servo */
@@ -24,6 +28,7 @@ Servo servo;
 int potPin = 0;
 
 bool isRunning = false;
+bool stream = false;
 
 void setup()
 {
@@ -31,7 +36,7 @@ void setup()
 
   /* We will wait for start signal... */
   while(Serial.available() < 1);
-  Serial.readBytesUntil('\r', serial_buffer, 100);
+  Serial.readBytesUntil('\n', serial_buffer, 100);
 
   token = strtok(serial_buffer, delim);
   if(!strcmp(token, "avc_start")) /* If start signal was received */
@@ -43,24 +48,29 @@ void setup()
       isRunning = true;
     }
     else
-      Serial.println("err 000"); /* Send error code back if error found */
+      Serial.println(ERR_SERVO_NO_MATCH); /* Send error code back if error found */
   }
 }
 
 void loop()
 {
-
   long currtime = millis();
   if((currtime - lasttime) >= del)
   {
     if(isRunning)
       sweep();
+    if(stream)
+    {
+      Serial.print(readAngle()); Serial.print(" ");
+      Serial.print(readRawAngle()); Serial.print(" ");
+      Serial.print(readPot()); Serial.println(" ack");
+    }
     lasttime = currtime;
   }
     
   if(Serial.available()) /* Statement only works when RPi sent code */
   {
-    Serial.readBytesUntil('\r', serial_buffer, 100); /* Read in max size of 100 */
+    Serial.readBytesUntil('\n', serial_buffer, 100); /* Read in max size of 100 */
 
     /* Split single-line command into code-by-code */
     /* Since delimiter is a whitespace, arduino will look through whitespaces */
@@ -70,39 +80,47 @@ void loop()
       if(!strcmp(token, "avc")) /* Proper start signal */
       {
         token = strtok(NULL, delim); /* Read next */
-        if(!strcmp(token, "stp"))
+        if(!strcmp(token, "srt")) /* Start */
+        {
+          token = strtok(NULL, delim);
+          if(!strcmp(token, "str")) /* Start stream mode*/
+          {
+            stream = true;
+          }
+        }
+        else if(!strcmp(token, "stp")) /* Stop */
+        {
+          token = strtok(NULL, delim);
+          if(!strcmp(token, "str")) /* Stop stream mode */
+          {
+            stream = false;
+            Serial.println("ack");
+          }
+          else
+          {
+            isRunning = false;
+            Serial.println("ack");
+          }
+        }
+        else if(!strcmp(token, "ctr")) /* Move to center */
         {
           isRunning = false;
           toCenter();
           Serial.println("ack");
         }
-        else if(!strcmp(token, "swp"))
+        else if(!strcmp(token, "swp")) /* Start sweeping */
         {
           angle_amt = 1; /* Reset direction */
           isRunning = true;
           Serial.println("ack");
         }
-        else if(!strcmp(token, "gto"))
+        else if(!strcmp(token, "gto")) /* Goto angle */
         {
           token = strtok(NULL, delim);
-          if(!strcmp(token, "ctr"))
-          {
-            isRunning = false;
-            toCenter();
-          }
-          else if(!strcmp(token, "str"))
-          {
-            /* Start */
-          }
-          else if(!strcmp(token, "end"))
-          {
-            /* End */
-          }
-          else
-          {
-            isRunning = false;
-            toAngle(atoi(token));
-          }
+          isRunning = false;
+          toAngle(atoi(token));
+          Serial.print(angle);
+          Serial.println(" ack");
         }
         else if(!strcmp(token, "set")) /* RPi sending config to Arduino */
         {
@@ -115,7 +133,15 @@ void loop()
           }
           if(!strcmp(token, "ctr"))
           {
-            setCenter();
+            if(!isRunning)
+            {
+              setCenter();
+              Serial.println("ack");
+            }
+            else
+            {
+              Serial.println(ERR_SERVO_RUNNING);
+            }
           }
           if(!strcmp(token, "clb")) /* Calibration */
           {
@@ -127,10 +153,16 @@ void loop()
           token = strtok(NULL, delim); /* Read next */
           if(!strcmp(token, "agl")) /* Angle request code */
             getAngle(); /* Return angle */
-          if(!strcmp(token, "agr")) /* Raw angle request code */
+          else if(!strcmp(token, "agr")) /* Raw angle request code */
             getRawAngle();
-          if(!strcmp(token, "pot")) /* Get potentiometer */
-            getPot(angle);
+          else if(!strcmp(token, "pot")) /* Get potentiometer */
+            getPot();
+          else
+          {
+            Serial.print(readAngle()); Serial.print(" ");
+            Serial.print(readRawAngle()); Serial.print(" ");
+            Serial.print(readPot()); Serial.println(" ack");
+          }
         }
       }
       token = strtok(NULL, delim);
@@ -149,30 +181,6 @@ void sweep()
     angle_amt = -angle_amt;
 
   servo.write(angle);
-}
-
-/* Returns current angle of servo
-*  Note that servo value is not directly applied,
- * which means value from this function may not
-*  be actual value of servo angle.
- */
-void getAngle()
-{
-  Serial.println(angle);
-}
-
-/* Returns actual angle reading from servo.
-*/
-void getRawAngle()
-{
-  Serial.println((int)servo.read());
-}
-
-/* Returns attached potentiometer's reading
- */
-void getPot(float angle)
-{
-  Serial.println(angle);
 }
 
 /* Sets servo agle to center
@@ -219,6 +227,54 @@ void setCenter()
   center = servo.read();
 }
 
+/* Returns current angle of servo
+*  Note that servo value is not directly applied,
+ * which means value from this function may not
+*  be actual value of servo angle.
+ */
+void getAngle()
+{
+  Serial.print(angle);
+  Serial.println(" ack");
+}
+
+/* Returns actual angle reading from servo.
+*/
+void getRawAngle()
+{
+  Serial.print((int)servo.read());
+  Serial.println(" ack");
+}
+
+/* Returns attached potentiometer's reading
+ */
+void getPot()
+{
+  int analog = analogRead(0);
+  float angle = ((float) analog / 1023.0f) * 340.0f;
+  
+  Serial.print(angle);
+  Serial.println(" ack");
+}
+
+float readPot()
+{
+  int analog = analogRead(0);
+  float angle = ((float) analog / 1023.0f) * 340.0f;
+
+  return angle;
+}
+
+int readRawAngle()
+{
+  return (int) servo.read();
+}
+
+int readAngle()
+{
+  return angle;
+}
+
 /* Tests servo.
 *  Servo moves from 0 to 180. While servo is moving,
  * Arduino will get servo angle value to check if given
@@ -230,7 +286,7 @@ bool test()
   {
     servo.write(angle);
     int _angle;
-    delay(del);
+    delay(5);
     _angle = servo.read();
     if(angle != _angle)
       return false;
@@ -239,7 +295,7 @@ bool test()
   {
     servo.write(angle);
     int _angle;
-    delay(del);
+    delay(5);
     _angle = servo.read();
     if(angle != _angle)
       return false;
