@@ -484,7 +484,6 @@ class LidarHandler(object):
             logger.printErr("\/From start() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
-            if self.lidar.
             self.last_scan = self.lidar.getScan(False)
             return
 
