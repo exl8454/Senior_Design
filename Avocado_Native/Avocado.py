@@ -76,6 +76,7 @@ logger.printInfo("LIDAR port is set to " + portLocation)
 lidar = Lidar(portLocation)
 # Start command handler
 shell = Shell(lidar)
+# Get visualizer initialized
 
 '''
 # Starts back-end scripts. Refer to ROSCore.py

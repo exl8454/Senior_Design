@@ -94,7 +94,7 @@ BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 
 done = False
-lidar = Lidar("COM11", 512)
+lidar = Lidar("COM5", 512)
 time.sleep(1)
 nodes = None
 node = None
