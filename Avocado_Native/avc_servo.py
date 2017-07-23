@@ -48,8 +48,10 @@ class AvcServo(object):
 
     def __init__(self, target_port):
         self.arduino = serial.Serial(port = target_port, baudrate = 115200)
-        time.sleep(3)
-        return
+
+        packet = self.receivePacket()
+        if packet[0] in ['ack']:
+            return
 
     def isOpened(self):
         if self.arduino is None:
@@ -76,6 +78,12 @@ class AvcServo(object):
             packet = str(packet.decode('ascii'))
             packet = packet.split('\r\n') # Remove delimiter first
             packet = packet[0].split(' ') # Split data
+            
+            if len(packet) != 4:
+                logger.printErr("\/From readPacket in AvcServo\/")
+                logger.printErr("Incorrect packet size")
+                return[]
+            
             angle = int(packet[0])
             raw_angle = int(packet[1])
             pot_angle = float(packet[2])
@@ -99,14 +107,14 @@ class AvcServo(object):
         return
 
     # Closes port (Serves as shutdown sequence as well)
-    def closePort(self, target_port):
+    def closePort(self):
         if not self.isOpened():
             return
         
         if not self.arduino.is_open:
             return
 
-        sefl.arduino.write(SHUTDOWN)
+        self.arduino.write(SHUTDOWN)
         self.arduino.close()
         return
 
@@ -222,6 +230,7 @@ class AvcServo(object):
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
+            return (pot_hi, pot_center, pot_lo)
 
     def calibrateB(self):
         global pot_hi, pot_center, pot_lo
@@ -231,6 +240,7 @@ class AvcServo(object):
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
+            return (pot_hi, pot_center, pot_lo)
 
     def calibrateC(self):
         global pot_hi, pot_center, pot_lo
@@ -240,6 +250,7 @@ class AvcServo(object):
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
+            return (pot_hi, pot_center, pot_lo)
 
     def calibrateD(self):
         global pot_hi, pot_center, pot_lo
@@ -248,16 +259,19 @@ class AvcServo(object):
 
             packet = self.receivePacket()
             if packet[0] in ['rdy']:
+                print("Servo is at lowest point. Adjust baseplate if needed.")
                 input("Press Enter to Move to Next Position...")
                 self.arduino.write(b'\r\n')
 
             packet = self.receivePacket()
             if packet[0] in ['rdy']:
+                print("Servo is at center point. Adjust baseplate if needed.")
                 input("Press Enter to Move to Next Position...")
                 self.arduino.write(b'\r\n')
 
             packet = self.receivePacket()
             if packet[0] in ['rdy']:
+                print("Servo is at highest point. Adjust baseplate if needed.")
                 input("Press Enter to Move to Next Position...")
                 self.arduino.write(b'\r\n')
 
@@ -265,6 +279,7 @@ class AvcServo(object):
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
+            return (pot_hi, pot_center, pot_lo)
 
     # Sends new delay interval for sweep
     def setDelay(self, _delay):
@@ -334,10 +349,10 @@ class AvcServo(object):
                 logger.printErr("\/From getPotentiometer in AvcServo\/")
                 logger.printErr("Packet size incorrect")
             else:
-                return int(packet[0])
+                return float(packet[0])
 
     # Returns single reading
     def getSample(self):
         if self.isOpened():
             self.arduino.write(GET_ALL)
-            return readPacket()
+            return self.readPacket()
