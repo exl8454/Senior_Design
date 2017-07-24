@@ -7,6 +7,7 @@
 /* Defines */
 #define ERR_SERVO_NO_MATCH "err 000"
 #define ERR_SERVO_RUNNING "err 001"
+#define DEBUG true
 
 /* Variables */
 int angle = 0; /* Actual angle */
@@ -229,7 +230,7 @@ void processData()
 void sweep()
 {
   angle += angle_amt;
-  if(angle > 180 || angle < 0)
+  if(angle >= 180 || angle <= 0)
     angle_amt = -angle_amt;
   if(angle == -1)
     angle = 0;
