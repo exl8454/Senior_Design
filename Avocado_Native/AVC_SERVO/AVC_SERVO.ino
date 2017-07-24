@@ -11,15 +11,22 @@
 void setup()
 {
   Serial.begin(115200); /* Start comm */
+#if !DEBUG  
   Serial.println("ack"); /* Send acknowledge code back */
-
   startSequence();
+#endif
 }
 
 void loop()
 {
+#if !DEBUG
   sendData();
-    
   processData();
+#else
+  float sampled = readPot();
+  Serial.print((int)sampled);
+  Serial.print(" ");
+  Serial.println(sampled);
+#endif
 }
 
