@@ -238,7 +238,6 @@ void sweep()
     angle = 180;
 
   servo.write(angle);
-  readPot();
 }
 
 /* Sets servo agle to center

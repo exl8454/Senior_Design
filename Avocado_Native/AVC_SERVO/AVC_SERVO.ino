@@ -20,6 +20,7 @@ void setup()
 void loop()
 {
 #if !DEBUG
+  readPot();
   sendData();
   processData();
 #else
