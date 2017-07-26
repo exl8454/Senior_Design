@@ -18,10 +18,13 @@ class AvcVis(object):
     GREEN = (  0, 255,   0)
     BLUE  = (  0,   0, 255)
     WHITE = (255, 255, 255)
+    
     done = False
+    
     lidar = None
     nodes = None
     node = None
+    
     clock = pygame.time.Clock()
     size = (600, 600)
     screen = None
