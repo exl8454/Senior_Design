@@ -7,7 +7,7 @@
 /* Defines */
 #define ERR_SERVO_NO_MATCH "err 000"
 #define ERR_SERVO_RUNNING "err 001"
-#define DEBUG true
+#define DEBUG false
 
 /* Variables */
 int angle = 0; /* Actual angle */
