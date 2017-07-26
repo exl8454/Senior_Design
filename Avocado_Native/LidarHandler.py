@@ -469,6 +469,7 @@ class LidarHandler(object):
 
             return self.last_sample
 
+    # Stops LIDAR object
     def stop(self):
         if self.lidar is None:
             logger.printErr("\/From stop() in class LidarHandler\/")
@@ -479,6 +480,7 @@ class LidarHandler(object):
             self.lidar.stopMotor()
             return
 
+    # Starts LIDAR object
     def start(self):
         if self.lidar is None:
             logger.printErr("\/From start() in class LidarHandler\/")
@@ -487,16 +489,32 @@ class LidarHandler(object):
             self.last_scan = self.lidar.getScan(False)
             return
 
+    # Opens port
     def open(self):
         if self.lidar is None:
             logger.printErr("\/From open() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
             self.lidar.openPort()
-            
+
+    # Closes port
     def close(self):
         if self.lidar is None:
             logger.printErr("\/From close() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
             self.lidar.closePort()
+
+    def setSpeed(self, pwm):
+        if self.lidar is None:
+            logger.printErr("\/From setSpeed() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.lidar.setSpeed(pwm);
+
+    def setSpeedDefault(self):
+        if self.lidar is None:
+            logger.printErr("\/From setSpeed() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.lidar.setSpeed();
