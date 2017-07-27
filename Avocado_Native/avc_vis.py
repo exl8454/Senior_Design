@@ -3,6 +3,7 @@
 
 # Native Import
 import time
+import threading
 import math
 
 # Thrid-Part Import
@@ -12,7 +13,7 @@ import pygame
 from LidarHandler import LidarHandler as Lidar
 import AvocadoLogger as logger
 
-class AvcVis(object):
+class AvcVis(threading.Thread):
     BLACK = (  0,   0,   0)
     RED   = (255,   0,   0)
     GREEN = (  0, 255,   0)
@@ -30,10 +31,16 @@ class AvcVis(object):
     screen = None
 
     def __init__(self, lidar):
+        threading.Thread.__init__(self)
         self.lidar = lidar
         if self.lidar is None:
             logger.printInfo("From avc_vis: LIDAR IS NOT SET")
 
+        return
+
+    def run(self):
+        while True:
+            pass
         return
 
     def startgfx(self):
@@ -47,10 +54,10 @@ class AvcVis(object):
 
             self.screen.fill(self.WHITE)
 
-            self.singlePoint(self.lidar.getNode(True), 361)
+            self.singlePoint(self.lidar.readNode(False), 361)
 
             pygame.display.flip()
-            self.clock.tick()
+            self.clock.tick(30)
 
         pygame.quit()
         self.done = False
@@ -112,5 +119,5 @@ class AvcVis(object):
                 elif (1 >= node[2] and node[2] >= 0):
                     pygame.draw.line(self.screen, self.RED, [center[0], center[1]], [300, 300])
             i += 1
-            node = self.lidar.getNode(True)
+            node = self.lidar.readNode(False)
         return

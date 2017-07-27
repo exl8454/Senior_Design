@@ -4,13 +4,13 @@
 
 # Native Import
 import time
+import threading
 
 # Thrid-Party Import
 import serial
 
-# Custom Import
-import StreamHandler as stream
-import AvocadoLogger as logger
+# Avocado Import
+import avc_logger as logger
 
 # Arduino control
 START = b'avc_start\r\n'
@@ -38,24 +38,35 @@ CALIBRATE_C = b'avc clb tpc\r\n'
 CALIBRATE_D = b'avc clb tpd\r\n'
 SET_CENTER = b'avc set ctr\r\n'
     
-class AvcServo(object):
+class AvcServo(threading.Thread):
     arduino = None
     isRunning = False
+    port = ""
 
     pot_hi = 180
     pot_center = 90
     pot_lo = 0
 
     def __init__(self, target_port):
-        self.arduino = serial.Serial(port = target_port, baudrate = 115200)
+        threading.Thread.__init__(self)
+        self.port = target_port
+        return
+
+    def run(self):
+        self.arduino = serial.Serial(port = self.port, baudrate = 115200)
 
         packet = self.receivePacket()
         if packet[0] in ['ack']:
-            return
-
+            pass
+        self.startServo()
+        
+        while self.isRunning:
+            pass
+        return
+    
     def isOpened(self):
         if self.arduino is None:
-            logger.printErr("\/From Arduino Checking\/")
+            logger.printErr("\/From isOpened in AvcServo\/")
             logger.printErr("No Arduino detected")
             return False
         else:
@@ -87,6 +98,7 @@ class AvcServo(object):
             angle = int(packet[0])
             raw_angle = int(packet[1])
             pot_angle = float(packet[2])
+            
             if packet[3] in ['ack']:
                 return [angle, raw_angle, pot_angle]
             else:
@@ -95,15 +107,18 @@ class AvcServo(object):
                 return []
             
     # Opens port
-    def openPort(self, target_port):
-        if not self.isOpened():
-            return
-        
-        if self.arduino.is_open:
-            self.arduino.close()
+    def openPort(self):
+        if not(self.arduino is None):
+            if self.arduino.is_open:
+                self.arduino.close()
 
-        self.arduino = serial.Serial(port = target_port, baudrate = 115200)
-        time.sleep(3)
+        self.arduino = serial.Serial(port = self.port, baudrate = 115200)
+
+        packet = self.receivePacket()
+        if packet[0] in ['ack']:
+            pass
+        self.startServo()
+        
         return
 
     # Closes port (Serves as shutdown sequence as well)
@@ -116,6 +131,7 @@ class AvcServo(object):
 
         self.arduino.write(SHUTDOWN)
         self.arduino.close()
+        self.isRunning = False
         return
 
     # Sends start sequence (Not to be used as start sweep)
@@ -227,6 +243,19 @@ class AvcServo(object):
         if self.isOpened():
             self.arduino.write(CALIBRATE_A)
             packet = self.receivePacket()
+            if len(packet) < 3:
+                if packet[0] in ['err']:
+                    if packet[1] in ['001']:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Servo is in sweep motion!")
+                        pass
+                    else:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Unknown Error Code: " + packet[2])
+                        pass
+                    pass
+                return (0, 0, 0)
+            
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
@@ -237,6 +266,19 @@ class AvcServo(object):
         if self.isOpened():
             self.arduino.write(CALIBRATE_B)
             packet = self.receivePacket()
+            if len(packet) < 3:
+                if packet[0] in ['err']:
+                    if packet[1] in ['001']:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Servo is in sweep motion!")
+                        pass
+                    else:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Unknown Error Code: " + packet[2])
+                        pass
+                    pass
+                return (0, 0, 0)
+            
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
@@ -247,6 +289,19 @@ class AvcServo(object):
         if self.isOpened():
             self.arduino.write(CALIBRATE_C)
             packet = self.receivePacket()
+            if len(packet) < 3:
+                if packet[0] in ['err']:
+                    if packet[1] in ['001']:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Servo is in sweep motion!")
+                        pass
+                    else:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Unknown Error Code: " + packet[2])
+                        pass
+                    pass
+                return (0, 0, 0)
+            
             pot_hi = int(packet[0])
             pot_center = int(packet[1])
             pot_lo = int(packet[2])
@@ -258,6 +313,19 @@ class AvcServo(object):
             self.arduino.write(CALIBRATE_D)
 
             packet = self.receivePacket()
+            if len(packet) < 3:
+                if packet[0] in ['err']:
+                    if packet[1] in ['001']:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Servo is in sweep motion!")
+                        pass
+                    else:
+                        logger.printErr("\/From calibrate in AvcServo\/")
+                        logger.printErr("Unknown Error Code: " + packet[2])
+                        pass
+                    pass
+                return (0, 0, 0)
+            
             if packet[0] in ['rdy']:
                 print("Servo is at lowest point. Adjust baseplate if needed.")
                 input("Press Enter to Move to Next Position...")
@@ -352,7 +420,10 @@ class AvcServo(object):
                 return float(packet[0])
 
     # Returns single reading
+    # Return order is Angle, Raw Angle, and Potentiometer Angle
     def getSample(self):
-        if self.isOpened():
+        if self.isRunning:
             self.arduino.write(GET_ALL)
             return self.readPacket()
+        else:
+            return [0, 0, 0]

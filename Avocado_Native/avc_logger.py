@@ -1,8 +1,9 @@
-# AvocadoLogger.py
-# For printing to screen + Writing to dump file
+# avc_logger.py
+# Logger Object (Not for data writing!)
 
 # Native Imports
 import os
+import os.path
 from datetime import datetime
 
 # Prints to Python shell
@@ -29,15 +30,28 @@ def printErr(line):
 
 def printDat(line):
     printTo(line, "DAT")
-    return
+    return  
 
-# Use this for file handling
-class AvocadoLogger(object):
-    directory = "AVC_DATA/AVC_DUMP_0.txt"  # File directory
+class AvcLogger(object):
+    directory = ""  # File directory
     _file = None     # File object
-    def __init__(self, directory, option = "w"):
-        self.directory = directory
+    
+    def __init__(self, directory, filecount, option = "w"):
+        self.directory = directory + "/DUMP_" + str(datetime.today().date()) + "_" + str(filecount) + ".txt"
+
+        while os.path.isfile(self.directory):
+            filecount += 1
+            self.directory = directory + "/DUMP_" + str(datetime.today().date()) + "_" + str(filecount) + ".txt"
+        
         self._file = open(self.directory, option)
+
+        return
+
+    def close(self):
+        if not self._file.closed:
+            self._file.close()
+            pass
+        return
         
     # Writes to target file
     def writeTo(self, line, title = "DMP", timestamp = True, append = False):
@@ -69,4 +83,4 @@ class AvocadoLogger(object):
 
     def writeDat(self, line):
         writeTo(line, "DAT")
-        return
+        return  

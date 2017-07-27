@@ -12,8 +12,10 @@ import threading
 import serial
 
 # Avocado Import
+from avc_file import AvcFile
 from avc_servo import AvcServo as AS
-import AvocadoLogger as logger
+import avc_logger as logger
+from avc_logger import AvcLogger
 import Config as config
 
 # Header constant
@@ -437,44 +439,45 @@ class LidarProcess(object):
         return scan
 
 # Lidar handler will start with single sampling to get warm up
-class LidarHandler(object):
+class AvcLidar(threading.Thread):
     lidar = None
     last_sample = None
     last_scan = []
+    last_servo_sample = None
+    port = ""
+    pwm = 512
 
     filehandler = None
+    servohandler = None
+
+    isRunning = False
     
     def __init__(self, port, pwm, filehandler, servohandler):
-        self.lidar = LidarProcess(port, pwm)
+        threading.Thread.__init__(self)
+
+        self.port = port
+        self.pwm = pwm
         self.filehandler = filehandler
         self.servohandler = servohandler
-        last_sample = self.lidar.getSample(False)
+
+        self.lidar = LidarProcess(self.port, self.pwm)
+        
         return
 
-    # Function will return full 360 scan
-    def getFullScan(self):
-        if self.lidar is None:
-            logger.printErr("\/From getFullScan() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.last_scan = self.lidar.getScan()
+    def run(self):
+        self.servohandler.start()
+        self.lidar = LidarProcess(self.port, self.pwm)
+        last_sample = self.lidar.getSample(False)
+        self.isRunning = True
 
-            filehandler.
-            return self.last_scan
-
-    # Function will return single sample
-    def getNode(self, leaveHigh):
-        if self.lidar is None:
-            logger.printErr("\/From getNode() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.last_sample = self.lidar.getSample(leaveHigh)
+        while self.isRunning:
+            self.readNode(False)
+            self.readServo()
             
+        return
 
-            return self.last_sample
-
-    # Stops LIDAR object
-    def stop(self):
+    # Stops Handler
+    def stopHandle(self):
         if self.lidar is None:
             logger.printErr("\/From stop() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
@@ -482,15 +485,21 @@ class LidarHandler(object):
             self.lidar.stopScan()
             self.lidar.reset()
             self.lidar.stopMotor()
+
+            self.stopSweep()
             return
 
-    # Starts LIDAR object
-    def start(self):
+    # Starts Handler
+    def startHandle(self):
         if self.lidar is None:
             logger.printErr("\/From start() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
+            self.lidar.stopScan()
+            self.lidar.reset()
             self.last_scan = self.lidar.getScan(False)
+
+            self.startSweep()
             return
 
     # Opens port
@@ -499,7 +508,13 @@ class LidarHandler(object):
             logger.printErr("\/From open() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
-            self.lidar.openPort()
+            #self.lidar.openPort()
+            self.lidar.stopScan()
+            self.lidar.reset()
+            self.last_scan = self.lidar.getScan()
+
+            self.servohandler.openPort()
+            return
 
     # Closes port
     def close(self):
@@ -508,7 +523,32 @@ class LidarHandler(object):
             logger.printErr("Lidar is not initialized!")
         else:
             self.lidar.closePort()
+            self.servohandler.closePort()
+            
+    # Function will return full 360 scan
+    def getFullScan(self):
+        if self.lidar is None:
+            logger.printErr("\/From getFullScan() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.last_scan = self.lidar.getScan()
 
+            return self.last_scan
+
+    # Reads single node, but does not pass sample
+    def readNode(self, leaveHigh):
+        if self.lidar is None:
+            logger.printErr("\/From getNode() in class LidarHandler\/")
+            logger.printErr("Lidar is not initialized!")
+        else:
+            self.last_sample = self.lidar.getSample(leaveHigh)
+        return self.lidar.getSample(leaveHigh)
+
+    def readServo(self):
+        self.last_servo_sample = self.getServoSample()
+        return self.getServoSample()
+
+    # Sets LIDAR rotation speed
     def setSpeed(self, pwm):
         if self.lidar is None:
             logger.printErr("\/From setSpeed() in class LidarHandler\/")
@@ -516,9 +556,64 @@ class LidarHandler(object):
         else:
             self.lidar.setSpeed(pwm);
 
+    # Sets LIDAR rotation speed to default speed
     def setSpeedDefault(self):
         if self.lidar is None:
             logger.printErr("\/From setSpeed() in class LidarHandler\/")
             logger.printErr("Lidar is not initialized!")
         else:
             self.lidar.setSpeed();
+
+    # Servo Handler
+    # Starts sweeping
+    def startSweep(self):
+        self.servohandler.sweepServo()
+        return
+
+    # Stops sweeping
+    def stopSweep(self):
+        self.servohandler.stopServo()
+        return
+
+    # Rotates servo to center (90 deg)
+    def toCenter(self):
+        self.servohandler.centerServo()
+        return
+
+    # Moves servo to target angle
+    def moveTo(self, angle):
+        self.servohandler.sweepTo(angle)
+        return
+
+    # Starts Type A Calibration
+    def calibA(self):
+        self.servohandler.calibrateA()
+        return
+
+    # Starts Type B Calibration
+    def calibB(self):
+        self.servohandler.calibrateB()
+        return
+
+    # Starts Type C Calibration
+    def calibC(self):
+        self.servohandler.calibrateC()
+        return
+
+    # Starts Type D Calibration
+    def calibD(self):
+        self.servohandler.calibrateD()
+        return
+
+    # Sets sweeping interval
+    def setSweepInterval(self, millisecond):
+        self.servohandler.setDelay(millisecond)
+        return
+
+    # Gets potentiometer reading
+    def getPot(self):
+        return self.servohandler.getPotentiometer()
+
+    # Returns servo handler sample
+    def getServoSample(self):
+        return self.servohandler.getSample()
