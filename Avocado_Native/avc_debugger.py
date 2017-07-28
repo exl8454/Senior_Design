@@ -5,16 +5,12 @@ from avc_servo import AvcServo as AS
 from avc_file import AvcFile as AF
 from avc_logger import AvcLogger as AL
 from avc_data import AvcData as AD
-from avc_lidar import AvcLidar as Lidar
+import avc_lidar
 from avc_servo import AvcServo as Servo
 from avc_vis import AvcVis as AV
 
-log = AL("AVC_DATA", 0, 'w')
-dat = AD("AVC_DATA", 0, 'w')
-file = AF(log, dat)
-servo = Servo("COM7")
-lidar = Lidar("COM11", 512, file, servo)
-lidar.open()
+from subprocess import Popen, PIPE
 
-vis = AV(lidar)
-vis.startgfx()
+lidarProcess = Popen(['python3', 'avc_lidar'], stdin=PIPE, stdout=PIPE)
+
+print (avc_lidar.last_sample)

@@ -3,8 +3,8 @@
 # Class-object remake
 
 # Native Import
+import sys
 import time
-import threading
 
 # Thrid-Party Import
 import serial
@@ -38,7 +38,7 @@ CALIBRATE_C = b'avc clb tpc\r\n'
 CALIBRATE_D = b'avc clb tpd\r\n'
 SET_CENTER = b'avc set ctr\r\n'
     
-class AvcServo(threading.Thread):
+class AvcServo(object):
     arduino = None
     isRunning = False
     port = ""
@@ -48,20 +48,8 @@ class AvcServo(threading.Thread):
     pot_lo = 0
 
     def __init__(self, target_port):
-        threading.Thread.__init__(self)
         self.port = target_port
-        return
-
-    def run(self):
-        self.arduino = serial.Serial(port = self.port, baudrate = 115200)
-
-        packet = self.receivePacket()
-        if packet[0] in ['ack']:
-            pass
-        self.startServo()
-        
-        while self.isRunning:
-            pass
+        self.openPort()
         return
     
     def isOpened(self):
