@@ -1,8 +1,6 @@
-'''
-    LidarHandler.py
-    Handles RPLidar via native control
-    Python 3.6.1
-'''
+# avc_lidar.py
+# Lidar Handler Script
+
 # Native Import
 import sys
 import time
@@ -14,7 +12,10 @@ import threading
 import serial
 
 # Avocado Import
-import AvocadoLogger as logger
+from avc_file import AvcFile
+from avc_servo import AvcServo as AS
+import avc_logger as logger
+from avc_logger import AvcLogger
 import Config as config
 
 # Header constant
@@ -69,18 +70,18 @@ def processSample(raw):
     if new_scan == _new_scan:
         logger.printErr("From process")
         logger.printErr("New Scan Flag Mismatch")
-        return [], 0
+        return [[], 0]
     check_bit = b2i(raw[1]) & 0b1
     if check_bit != 1:
         logger.printErr("From process")
         logger.printErr("Check bit not equal to 1")
-        return [], 0
+        return [[], 0]
     angle = ((b2i(raw[1]) >> 1) + (b2i(raw[2]) << 7)) / 64.
     distance = (b2i(raw[3]) + (b2i(raw[4]) << 8)) / 4.
     data = [new_scan, quality, angle, distance]
     return [data, len(data)]
 
-class LidarProcess(object):
+class AvcLidar(object):
     _port = None    # For serial object
     port = ''       # For port selection
     port_timeout = 5# For UART data xmit timeout
@@ -89,6 +90,8 @@ class LidarProcess(object):
     motor_running = False
     hardware = -1
     baudrate = 115200
+
+    isProcessRunning = False
 
     def __init__(self, port, pwm, timeout = 1):
         self.port = port
@@ -102,9 +105,18 @@ class LidarProcess(object):
 
         self.openPort()
         time.sleep(1)
+        self.reset()
         info = self.readInfo()
         self.hardware = int(info['hardware'])
         self.startMotor()
+        
+        self.isProcessRunning = True
+        return
+
+    def stopProcess(self):
+        self.isProcessRunning = False
+        return
+    
     '''
         Returns target port
         Returns: Serial object of port
@@ -126,6 +138,7 @@ class LidarProcess(object):
         info = self.readInfo()
         self.hardware = int(info['hardware'])
         self.startMotor()
+        return
 
     '''
         Opens serial port with preset configurations.
@@ -399,11 +412,15 @@ class LidarProcess(object):
         if not self.scanning:
             self.startScan()
 
+        sample = [True, 0, 0, 0]
         raw = self.readResp(SCAN_LEN)
-        data = processSample(raw)[0]
-        while data[2] == 0.0: # This will dump invalid data
-            raw = self.readResp(SCAN_LEN)
-            data = processSample(raw)[0]
+        data = processSample(raw)
+        if data[1] == 0:
+            pass
+        else:
+            while (data[0][2] == 0.0): # This will dump invalid data
+                raw = self.readResp(SCAN_LEN)
+                data = processSample(raw)
 
         sample = processSample(raw)[0]
 
@@ -436,85 +453,8 @@ class LidarProcess(object):
 
         return scan
 
-# Lidar handler will start with single sampling to get warm up
-class LidarHandler(object):
-    lidar = None
-    last_sample = None
-    last_scan = []
+lidar = AvcLidar('COM11', 512)
+last_sample = None
 
-    continuous = False
-    
-    def __init__(self, port, pwm):
-        self.lidar = LidarProcess(port, pwm)
-        last_sample = self.lidar.getSample(False)
-        return
-
-    # Function will return full 360 scan
-    def getFullScan(self):
-        if self.lidar is None:
-            logger.printErr("\/From getFullScan() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.last_scan = self.lidar.getScan()
-            
-            return self.last_scan
-
-    # Function will return single sample
-    def getNode(self, leaveHigh):
-        if self.lidar is None:
-            logger.printErr("\/From getNode() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.last_sample = self.lidar.getSample(leaveHigh)
-
-            return self.last_sample
-
-    # Stops LIDAR object
-    def stop(self):
-        if self.lidar is None:
-            logger.printErr("\/From stop() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.lidar.stopScan()
-            self.lidar.reset()
-            self.lidar.stopMotor()
-            return
-
-    # Starts LIDAR object
-    def start(self):
-        if self.lidar is None:
-            logger.printErr("\/From start() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.last_scan = self.lidar.getScan(False)
-            return
-
-    # Opens port
-    def open(self):
-        if self.lidar is None:
-            logger.printErr("\/From open() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.lidar.openPort()
-
-    # Closes port
-    def close(self):
-        if self.lidar is None:
-            logger.printErr("\/From close() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.lidar.closePort()
-
-    def setSpeed(self, pwm):
-        if self.lidar is None:
-            logger.printErr("\/From setSpeed() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.lidar.setSpeed(pwm);
-
-    def setSpeedDefault(self):
-        if self.lidar is None:
-            logger.printErr("\/From setSpeed() in class LidarHandler\/")
-            logger.printErr("Lidar is not initialized!")
-        else:
-            self.lidar.setSpeed();
+while lidar.isProcessRunning:
+    last_sample = lidar.getSample(True)

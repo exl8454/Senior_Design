@@ -7,6 +7,7 @@
 /* Defines */
 #define ERR_SERVO_NO_MATCH "err 000"
 #define ERR_SERVO_RUNNING "err 001"
+#define DEBUG false
 
 /* Variables */
 int angle = 0; /* Actual angle */
@@ -143,7 +144,6 @@ void processData()
         }
         else if(!strcmp(token, "swp")) /* Start sweeping */
         {
-          angle_amt = 1; /* Reset direction */
           isRunning = true;
           Serial.println("ack");
         }
@@ -229,7 +229,7 @@ void processData()
 void sweep()
 {
   angle += angle_amt;
-  if(angle > 180 || angle < 0)
+  if(angle >= 180 || angle <= 0)
     angle_amt = -angle_amt;
   if(angle == -1)
     angle = 0;
@@ -237,7 +237,6 @@ void sweep()
     angle = 180;
 
   servo.write(angle);
-  readPot();
 }
 
 /* Sets servo agle to center
@@ -454,7 +453,7 @@ void calibrate_a()
     readPot();
   }
   delay(1000);
-  float _lo = readPot();
+  float _hi = readPot();
 
   for(angle = 180; angle >= 0; angle--)
   {
@@ -463,7 +462,7 @@ void calibrate_a()
     readPot();
   }
   delay(1000);
-  float _hi = readPot();
+  float _lo = readPot();
   
   hi = (int) _hi;
   lo = (int) _lo;
@@ -498,7 +497,7 @@ void calibrate_b()
     angle++;
     servo.write(angle);
     delay(200);
-    _lo = readPot();
+    _hi = readPot();
   }
   delay(1000);
   while(angle != 90)
@@ -514,7 +513,7 @@ void calibrate_b()
     angle--;
     servo.write(angle);
     delay(200);
-    _hi = readPot();
+    _lo = readPot();
   }
   delay(1000);
 
@@ -543,8 +542,8 @@ void calibrate_b()
  */
 void calibrate_c()
 {
-  float _lo = 340;
-  float _offset = 90;
+  float _lo = 0;
+  float _offset = 180;
   float _hi = 0;
 
   float __lo = 0;
@@ -553,29 +552,8 @@ void calibrate_c()
   int i = 0;
   
   sweepTo(0, 25);
+  _hi = readPot();
   for(angle = 0; angle <= 170; angle++)
-  {
-    servo.write(angle);
-    delay(50);
-    __lo = readPot();
-    if(__lo < _lo)
-      _lo = __lo;
-  }
-  for(angle = 170; angle <= 180; angle++)
-  {
-    servo.write(angle);
-    for(i = 0; i < 500; i++)
-    {
-      __lo = readPot();
-      if(__lo < _lo)
-        _lo = __lo;
-      delay(1);
-    }
-  }
-
-  delay(1000);
-
-  for(angle = 180; angle >= 10; angle--)
   {
     servo.write(angle);
     delay(50);
@@ -583,7 +561,7 @@ void calibrate_c()
     if(__hi > _hi)
       _hi = __hi;
   }
-  for(angle = 10; angle >= 0; angle--)
+  for(angle = 170; angle <= 180; angle++)
   {
     servo.write(angle);
     for(i = 0; i < 500; i++)
@@ -591,6 +569,29 @@ void calibrate_c()
       __hi = readPot();
       if(__hi > _hi)
         _hi = __hi;
+      delay(1);
+    }
+  }
+
+  delay(1000);
+
+  _lo = readPot();
+  for(angle = 180; angle >= 10; angle--)
+  {
+    servo.write(angle);
+    delay(50);
+    __lo = readPot();
+    if(__lo < _lo)
+      _lo = __lo;
+  }
+  for(angle = 10; angle >= 0; angle--)
+  {
+    servo.write(angle);
+    for(i = 0; i < 500; i++)
+    {
+      __lo = readPot();
+      if(__lo > _lo)
+        _lo = __lo;
       delay(1);
     }
   }
@@ -623,7 +624,7 @@ void calibrate_d()
   while(Serial.available() < 1)
     readPot();
 
-  float _lo = readPot();
+  float _hi = readPot();
   servo.attach(servoPin);
   angle = servo.read();
   sweepTo(90, 50);
@@ -649,7 +650,7 @@ void calibrate_d()
   while(Serial.available() < 1)
     readPot();
 
-  float _hi = readPot();
+  float _lo = readPot();
   servo.attach(servoPin);
   angle = servo.read();
   while(Serial.available())

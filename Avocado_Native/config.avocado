@@ -5,4 +5,6 @@ avocado_servo_interval=15
 avocado_serial_timeout=5
 avocado_dump_location=AVC_DATA
 avocado_lidar_linux=/dev/ttyUSB0
-avocado_lidar_windows=COM5
+avocado_lidar_windows=COM11
+avocado_arduino_linux=/dev/ttyACM0
+avocado_arduino_windows=COM7

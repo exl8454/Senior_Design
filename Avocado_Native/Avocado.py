@@ -8,6 +8,7 @@ Avocado Native Version
 import os
 import os.path
 import platform
+from datetime import datetime
 
 # Third-party imports
 
@@ -18,7 +19,6 @@ from AvocadoLogger import Avocado_Logger as Output
 import StreamHandler as stream
 import ROSCore as roscore
 import Config as config
-from datetime import datetime
 from LidarHandler import LidarHandler as Lidar
 from commandhandler import CommandHandler as Shell
 
